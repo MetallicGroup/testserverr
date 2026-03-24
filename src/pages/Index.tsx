@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import ServicesSection from "@/components/ServicesSection";
+import ProductSlider from "@/components/ProductSlider";
 import ShowcaseGallery from "@/components/ShowcaseGallery";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import OrderForm from "@/components/OrderForm";
