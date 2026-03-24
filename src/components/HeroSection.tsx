@@ -22,9 +22,9 @@ export default function HeroSection() {
   }, [next]);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative isolate min-h-screen flex items-center overflow-hidden">
       {/* Slideshow background with crossfade */}
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 z-0">
         {slides.map((src, i) => (
           <motion.img
             key={i}
@@ -43,11 +43,11 @@ export default function HeroSection() {
             height={1080}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/45 to-background/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/45 via-background/10 to-transparent" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-32">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-32">
         <div className="max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
