@@ -25,20 +25,24 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Slideshow background with crossfade */}
       <div className="absolute inset-0 -z-10">
-        <AnimatePresence mode="popLayout">
+        {slides.map((src, i) => (
           <motion.img
-            key={current}
-            src={slides[current]}
+            key={i}
+            src={src}
             alt="Produse promoționale personalizate"
             className="absolute inset-0 w-full h-full object-cover"
-            initial={{ opacity: 0, scale: 1.08 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ opacity: { duration: 1.2, ease: "easeInOut" }, scale: { duration: 6, ease: "linear" } }}
+            animate={{
+              opacity: i === current ? 1 : 0,
+              scale: i === current ? 1 : 1.08,
+            }}
+            transition={{
+              opacity: { duration: 1.2, ease: "easeInOut" },
+              scale: { duration: 6, ease: "linear" },
+            }}
             width={1920}
             height={1080}
           />
-        </AnimatePresence>
+        ))}
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
