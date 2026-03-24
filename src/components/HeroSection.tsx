@@ -1,22 +1,44 @@
+import { useState, useEffect, useCallback } from "react";
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import heroSlide1 from "@/assets/hero-slide-1.jpg";
+import heroSlide2 from "@/assets/hero-slide-2.jpg";
+import heroSlide3 from "@/assets/hero-slide-3.jpg";
+import heroSlide4 from "@/assets/hero-slide-4.jpg";
 import heroCinematic from "@/assets/hero-cinematic.jpg";
 
+const slides = [heroCinematic, heroSlide1, heroSlide2, heroSlide3, heroSlide4];
+
 export default function HeroSection() {
+  const [current, setCurrent] = useState(0);
+
+  const next = useCallback(() => {
+    setCurrent((prev) => (prev + 1) % slides.length);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(next, 5000);
+    return () => clearInterval(id);
+  }, [next]);
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Full-screen background image */}
+      {/* Slideshow background with crossfade */}
       <div className="absolute inset-0 -z-10">
-        <motion.img
-          src={heroCinematic}
-          alt="Produse promoționale personalizate"
-          className="w-full h-full object-cover"
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          width={1920}
-          height={1080}
-        />
+        <AnimatePresence mode="popLayout">
+          <motion.img
+            key={current}
+            src={slides[current]}
+            alt="Produse promoționale personalizate"
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ opacity: 0, scale: 1.08 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ opacity: { duration: 1.2, ease: "easeInOut" }, scale: { duration: 6, ease: "linear" } }}
+            width={1920}
+            height={1080}
+          />
+        </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
@@ -79,12 +101,31 @@ export default function HeroSection() {
             </a>
           </motion.div>
 
+          {/* Slide indicators */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1.1 }}
+            className="mt-12 flex gap-2"
+          >
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i === current ? "w-10 bg-primary" : "w-4 bg-border hover:bg-muted-foreground/40"
+                }`}
+                aria-label={`Slide ${i + 1}`}
+              />
+            ))}
+          </motion.div>
+
           {/* Stats row */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
-            className="mt-16 flex gap-12"
+            className="mt-10 flex gap-12"
           >
             {[
               { value: "100+", label: "Tipuri de produse" },
