@@ -43,8 +43,8 @@ export default function HeroSection() {
             height={1080}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-r from-background/85 via-background/45 to-background/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/45 via-background/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/68 via-background/28 to-background/5" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/28 via-background/5 to-transparent" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-32">
