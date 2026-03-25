@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search } from "lucide-react";
 import products, { productCategories } from "@/data/products";
+import ProductMockup from "@/components/ProductMockup";
 
 type Finish = "low" | "medium" | "high";
 
@@ -232,6 +233,17 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               </label>
             )}
           </div>
+        )}
+
+        {/* Preview Mockup Button */}
+        {product && (customType === "text" ? true : true) && (
+          <ProductMockup
+            productName={product.name}
+            productCategory={product.category}
+            customType={customType}
+            customText={customText}
+            imagePreview={imagePreview}
+          />
         )}
       </section>
 
