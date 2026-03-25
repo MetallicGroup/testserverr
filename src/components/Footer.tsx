@@ -14,7 +14,7 @@ export default function Footer() {
           className="grid sm:grid-cols-3 gap-10 mb-12"
         >
           <div>
-            <p className="text-2xl font-black text-primary mb-3">avozenevo</p>
+            <img src={logo} alt="Avozenevo" className="h-10 w-auto mb-3" />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Produse personalizate pentru business-ul tău. Calitate, rapiditate și flexibilitate.
             </p>
