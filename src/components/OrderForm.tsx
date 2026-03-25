@@ -234,6 +234,17 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             )}
           </div>
         )}
+
+        {/* Preview Mockup Button */}
+        {product && (customType === "text" ? true : true) && (
+          <ProductMockup
+            productName={product.name}
+            productCategory={product.category}
+            customType={customType}
+            customText={customText}
+            imagePreview={imagePreview}
+          />
+        )}
       </section>
 
       <Separator />
