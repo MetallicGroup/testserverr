@@ -1,5 +1,6 @@
 import { Phone, Mail, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
+import logo from "@/assets/avozenevo-logo.png";
 
 export default function Footer() {
   return (
