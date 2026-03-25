@@ -5,7 +5,7 @@ import { Eye, Download } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
-import { getShapeForProduct } from "@/data/mockupShapes";
+import { getMockupForProduct } from "@/data/mockupImages";
 
 interface ProductMockupProps {
   productName: string;
@@ -17,19 +17,10 @@ interface ProductMockupProps {
 
 export default function ProductMockup({ productName, productCategory, customType, customText, imagePreview }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
-  const shape = getShapeForProduct(productName, productCategory);
+  const mockup = getMockupForProduct(productName, productCategory);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
-
-  // Scale the shape to fit nicely in the dialog
-  const maxW = 360;
-  const maxH = 360;
-  const scaleX = maxW / shape.svgWidth;
-  const scaleY = maxH / shape.svgHeight;
-  const scale = Math.min(scaleX, scaleY, 1.8);
-  const renderW = Math.round(shape.svgWidth * scale);
-  const renderH = Math.round(shape.svgHeight * scale);
 
   const handleDownloadPDF = useCallback(async () => {
     if (!mockupRef.current) return;
@@ -49,14 +40,13 @@ export default function ProductMockup({ productName, productCategory, customType
     pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
   }, [productName]);
 
-  // Dynamic font size based on text length and print area
   const getFontSize = () => {
     const len = displayText.length;
-    if (len > 30) return 8;
-    if (len > 20) return 10;
-    if (len > 12) return 12;
-    if (len > 6) return 15;
-    return 18;
+    if (len > 30) return 9;
+    if (len > 20) return 11;
+    if (len > 12) return 13;
+    if (len > 6) return 16;
+    return 20;
   };
 
   return (
@@ -74,42 +64,29 @@ export default function ProductMockup({ productName, productCategory, customType
 
         <div
           ref={mockupRef}
-          className="bg-white p-8 flex flex-col items-center justify-center gap-4"
+          className="bg-white p-6 flex flex-col items-center justify-center gap-3"
         >
           <p style={{ color: "#888", fontSize: 11, fontWeight: 500, letterSpacing: 3, textTransform: "uppercase" }}>
             {productName}
           </p>
 
-          <div className="relative" style={{ width: renderW, height: renderH }}>
-            <svg
-              viewBox={shape.viewBox}
-              width={renderW}
-              height={renderH}
-              className="absolute inset-0"
-            >
-              <defs>
-                <linearGradient id="mockupGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#e8ecf1" />
-                  <stop offset="100%" stopColor="#cdd3dc" />
-                </linearGradient>
-              </defs>
-              <path
-                d={shape.svgPath}
-                fill="url(#mockupGrad)"
-                stroke="#9ca3af"
-                strokeWidth="1.2"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            </svg>
+          {/* Product photo with print overlay */}
+          <div className="relative inline-block" style={{ maxWidth: 400, maxHeight: 400 }}>
+            <img
+              src={mockup.image}
+              alt={productName}
+              className="w-full h-auto max-h-[380px] object-contain"
+              crossOrigin="anonymous"
+            />
 
+            {/* Print area overlay */}
             <div
               className="absolute flex items-center justify-center overflow-hidden"
               style={{
-                top: shape.printArea.top,
-                left: shape.printArea.left,
-                width: shape.printArea.width,
-                height: shape.printArea.height,
+                top: mockup.printArea.top,
+                left: mockup.printArea.left,
+                width: mockup.printArea.width,
+                height: mockup.printArea.height,
               }}
             >
               {customType === "text" ? (
@@ -122,6 +99,7 @@ export default function ProductMockup({ productName, productCategory, customType
                   lineHeight: 1.2,
                   maxWidth: "100%",
                   padding: "2px",
+                  textShadow: "0 0 2px rgba(255,255,255,0.8)",
                 }}>
                   {displayText}
                 </p>
@@ -130,7 +108,13 @@ export default function ProductMockup({ productName, productCategory, customType
                   <img
                     src={displayImage}
                     alt="Custom design"
-                    style={{ maxWidth: "92%", maxHeight: "92%", objectFit: "contain" }}
+                    style={{
+                      maxWidth: "90%",
+                      maxHeight: "90%",
+                      objectFit: "contain",
+                      opacity: 0.9,
+                      mixBlendMode: "multiply",
+                    }}
                     crossOrigin="anonymous"
                   />
                 )
