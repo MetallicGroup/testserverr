@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search } from "lucide-react";
 import products, { productCategories } from "@/data/products";
+import ProductMockup from "@/components/ProductMockup";
 
 type Finish = "low" | "medium" | "high";
 
