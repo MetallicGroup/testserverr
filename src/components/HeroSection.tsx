@@ -133,7 +133,6 @@ export default function HeroSection() {
           >
             {[
               { value: "100+", label: "Tipuri de produse" },
-              { value: "24h", label: "Livrare express" },
               { value: "50K+", label: "Produse livrate" },
             ].map((s) => (
               <div key={s.label}>

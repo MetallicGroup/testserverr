@@ -1,4 +1,4 @@
-import { Type, Image, Package, Truck } from "lucide-react";
+import { Type, Image, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
 const services = [
@@ -19,12 +19,6 @@ const services = [
     title: "Comenzi B2B în volum",
     description: "De la 1 bucată la mii — prețuri avantajoase pentru comenzi mari.",
     gradient: "from-energy-purple to-primary",
-  },
-  {
-    icon: Truck,
-    title: "Livrare rapidă",
-    description: "Procesăm și livrăm comenzile în cel mai scurt timp posibil.",
-    gradient: "from-energy-green to-primary",
   },
 ];
 
