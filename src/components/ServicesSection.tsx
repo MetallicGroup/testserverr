@@ -20,12 +20,6 @@ const services = [
     description: "De la 1 bucată la mii — prețuri avantajoase pentru comenzi mari.",
     gradient: "from-energy-purple to-primary",
   },
-  {
-    icon: Truck,
-    title: "Livrare rapidă",
-    description: "Procesăm și livrăm comenzile în cel mai scurt timp posibil.",
-    gradient: "from-energy-green to-primary",
-  },
 ];
 
 export default function ServicesSection() {
