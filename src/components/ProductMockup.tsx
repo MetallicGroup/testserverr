@@ -7,15 +7,136 @@ import jsPDF from "jspdf";
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 
+type Finish = "low" | "medium" | "high";
+
+const FINISH_MULTIPLIERS: Record<Finish, number> = { low: 1, medium: 1.6, high: 2.5 };
+const FINISH_META: Record<Finish, { label: string; color: string; badge: string }> = {
+  low:    { label: "Low Cost",    color: "#6b7280", badge: "bg-gray-100 text-gray-700" },
+  medium: { label: "Medium",      color: "#2563eb", badge: "bg-blue-100 text-blue-700" },
+  high:   { label: "High-Ticket", color: "#7c3aed", badge: "bg-purple-100 text-purple-700" },
+};
+
 interface ProductMockupProps {
   productName: string;
   productCategory: string;
   customType: "text" | "image";
   customText: string;
   imagePreview: string | null;
+  finish: Finish;
+  basePrice: number;
 }
 
-export default function ProductMockup({ productName, productCategory, customType, customText, imagePreview }: ProductMockupProps) {
+function MockupCard({
+  productName,
+  mockupImage,
+  printArea,
+  customType,
+  displayText,
+  displayImage,
+  finishKey,
+  basePrice,
+  isSelected,
+}: {
+  productName: string;
+  mockupImage: string;
+  printArea: { top: string; left: string; width: string; height: string };
+  customType: "text" | "image";
+  displayText: string;
+  displayImage: string | null;
+  finishKey: Finish;
+  basePrice: number;
+  isSelected: boolean;
+}) {
+  const meta = FINISH_META[finishKey];
+  const price = (basePrice * FINISH_MULTIPLIERS[finishKey]).toFixed(2);
+
+  const getFontSize = () => {
+    const len = displayText.length;
+    if (len > 30) return 7;
+    if (len > 20) return 8;
+    if (len > 12) return 10;
+    if (len > 6) return 12;
+    return 14;
+  };
+
+  return (
+    <div className={`flex-1 rounded-xl border-2 transition-all p-3 ${
+      isSelected ? "border-primary shadow-lg bg-white" : "border-border/50 bg-white/80 opacity-75"
+    }`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.badge}`}>
+          {meta.label}
+        </span>
+        <span className="text-sm font-bold" style={{ color: meta.color }}>
+          {price} RON
+        </span>
+      </div>
+
+      <div className="relative mx-auto" style={{ maxWidth: 180 }}>
+        <img
+          src={mockupImage}
+          alt={`${productName} - ${meta.label}`}
+          className="w-full h-auto object-contain"
+          crossOrigin="anonymous"
+        />
+        <div
+          className="absolute flex items-center justify-center overflow-hidden"
+          style={{
+            top: printArea.top,
+            left: printArea.left,
+            width: printArea.width,
+            height: printArea.height,
+          }}
+        >
+          {customType === "text" ? (
+            <p style={{
+              color: "#1a1a2e",
+              fontWeight: 700,
+              fontSize: getFontSize(),
+              textAlign: "center",
+              wordBreak: "break-word",
+              lineHeight: 1.2,
+              maxWidth: "100%",
+              padding: "1px",
+              textShadow: "0 0 2px rgba(255,255,255,0.8)",
+            }}>
+              {displayText}
+            </p>
+          ) : (
+            displayImage && (
+              <img
+                src={displayImage}
+                alt="Custom"
+                style={{
+                  maxWidth: "90%",
+                  maxHeight: "90%",
+                  objectFit: "contain",
+                  opacity: 0.9,
+                  mixBlendMode: "multiply",
+                }}
+                crossOrigin="anonymous"
+              />
+            )
+          )}
+        </div>
+      </div>
+
+      {isSelected && (
+        <p className="text-center text-[10px] text-primary font-semibold mt-2">✓ Selectat</p>
+      )}
+    </div>
+  );
+}
+
+export default function ProductMockup({
+  productName,
+  productCategory,
+  customType,
+  customText,
+  imagePreview,
+  finish,
+  basePrice,
+}: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
   const mockup = getMockupForProduct(productName, productCategory);
 
@@ -40,89 +161,43 @@ export default function ProductMockup({ productName, productCategory, customType
     pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
   }, [productName]);
 
-  const getFontSize = () => {
-    const len = displayText.length;
-    if (len > 30) return 9;
-    if (len > 20) return 11;
-    if (len > 12) return 13;
-    if (len > 6) return 16;
-    return 20;
-  };
-
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button type="button" variant="outline" className="gap-2 w-full mt-3">
           <Eye className="w-4 h-4" />
-          Preview mockup
+          Compară finisaje & Preview mockup
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Preview: {productName}</DialogTitle>
+          <DialogTitle>Comparație finisaje: {productName}</DialogTitle>
         </DialogHeader>
 
-        <div
-          ref={mockupRef}
-          className="bg-white p-6 flex flex-col items-center justify-center gap-3"
-        >
-          <p style={{ color: "#888", fontSize: 11, fontWeight: 500, letterSpacing: 3, textTransform: "uppercase" }}>
-            {productName}
+        <div ref={mockupRef} className="bg-white p-4 sm:p-6">
+          <p className="text-center text-xs text-gray-400 uppercase tracking-widest mb-4">
+            {productName} — Comparație calitate finisaj
           </p>
 
-          {/* Product photo with print overlay */}
-          <div className="relative inline-block" style={{ maxWidth: 400, maxHeight: 400 }}>
-            <img
-              src={mockup.image}
-              alt={productName}
-              className="w-full h-auto max-h-[380px] object-contain"
-              crossOrigin="anonymous"
-            />
-
-            {/* Print area overlay */}
-            <div
-              className="absolute flex items-center justify-center overflow-hidden"
-              style={{
-                top: mockup.printArea.top,
-                left: mockup.printArea.left,
-                width: mockup.printArea.width,
-                height: mockup.printArea.height,
-              }}
-            >
-              {customType === "text" ? (
-                <p style={{
-                  color: "#1a1a2e",
-                  fontWeight: 700,
-                  fontSize: getFontSize(),
-                  textAlign: "center",
-                  wordBreak: "break-word",
-                  lineHeight: 1.2,
-                  maxWidth: "100%",
-                  padding: "2px",
-                  textShadow: "0 0 2px rgba(255,255,255,0.8)",
-                }}>
-                  {displayText}
-                </p>
-              ) : (
-                displayImage && (
-                  <img
-                    src={displayImage}
-                    alt="Custom design"
-                    style={{
-                      maxWidth: "90%",
-                      maxHeight: "90%",
-                      objectFit: "contain",
-                      opacity: 0.9,
-                      mixBlendMode: "multiply",
-                    }}
-                    crossOrigin="anonymous"
-                  />
-                )
-              )}
-            </div>
+          {/* 3-column comparison */}
+          <div className="flex gap-3 sm:gap-4">
+            {(["low", "medium", "high"] as Finish[]).map((key) => (
+              <MockupCard
+                key={key}
+                productName={productName}
+                mockupImage={mockup.image}
+                printArea={mockup.printArea}
+                customType={customType}
+                displayText={displayText}
+                displayImage={displayImage}
+                finishKey={key}
+                basePrice={basePrice}
+                isSelected={finish === key}
+              />
+            ))}
           </div>
 
-          <p style={{ color: "#ccc", fontSize: 9, letterSpacing: 3, textTransform: "uppercase" }}>
+          <p className="text-center text-[9px] text-gray-300 uppercase tracking-widest mt-4">
             avozenevo mockup preview
           </p>
         </div>
