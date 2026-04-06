@@ -1,4 +1,4 @@
-import { Type, Image, Package, Truck } from "lucide-react";
+import { Type, Image, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
 const services = [
