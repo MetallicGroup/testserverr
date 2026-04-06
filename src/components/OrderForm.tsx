@@ -6,8 +6,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search } from "lucide-react";
+import {
+  Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search,
+  Heart, HardHat, UtensilsCrossed, Monitor, GraduationCap, Car,
+  ShoppingBag, CalendarDays, Dumbbell, Sparkles, Scale, Wheat, Building2,
+} from "lucide-react";
 import products, { productCategories } from "@/data/products";
+import businessDomains from "@/data/businessDomains";
 import ProductMockup from "@/components/ProductMockup";
 
 type Finish = "low" | "medium" | "high";
@@ -24,11 +29,27 @@ const FINISH_LABELS: Record<Finish, { label: string; description: string }> = {
   high: { label: "High-Ticket", description: "Premium, materiale de top" },
 };
 
+const DOMAIN_ICONS: Record<string, React.ReactNode> = {
+  medical: <Heart className="w-5 h-5" />,
+  constructii: <HardHat className="w-5 h-5" />,
+  horeca: <UtensilsCrossed className="w-5 h-5" />,
+  it: <Monitor className="w-5 h-5" />,
+  educatie: <GraduationCap className="w-5 h-5" />,
+  auto: <Car className="w-5 h-5" />,
+  retail: <ShoppingBag className="w-5 h-5" />,
+  evenimente: <CalendarDays className="w-5 h-5" />,
+  fitness: <Dumbbell className="w-5 h-5" />,
+  beauty: <Sparkles className="w-5 h-5" />,
+  juridic: <Scale className="w-5 h-5" />,
+  agricultura: <Wheat className="w-5 h-5" />,
+};
+
 interface OrderFormProps {
   preselectedProductId?: string;
 }
 
 export default function OrderForm({ preselectedProductId }: OrderFormProps) {
+  const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [customType, setCustomType] = useState<"text" | "image">("text");
@@ -51,12 +72,27 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     }
   }, [preselectedProductId]);
 
+  // Get products filtered by domain first, then by category
+  const domainProductIds = useMemo(() => {
+    if (!selectedDomain) return null;
+    const domain = businessDomains.find((d) => d.id === selectedDomain);
+    return domain ? new Set(domain.productIds) : null;
+  }, [selectedDomain]);
+
+  // Available categories for the selected domain
+  const availableCategories = useMemo(() => {
+    if (!domainProductIds) return productCategories;
+    const domainProducts = products.filter((p) => domainProductIds.has(p.id));
+    return Array.from(new Set(domainProducts.map((p) => p.category)));
+  }, [domainProductIds]);
+
   const filteredProducts = useMemo(() => {
     let list = products;
+    if (domainProductIds) list = list.filter((p) => domainProductIds.has(p.id));
     if (selectedCategory) list = list.filter((p) => p.category === selectedCategory);
     if (searchTerm) list = list.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     return list;
-  }, [selectedCategory, searchTerm]);
+  }, [domainProductIds, selectedCategory, searchTerm]);
 
   const product = useMemo(() => products.find((p) => p.id === selectedProduct), [selectedProduct]);
 
@@ -127,11 +163,48 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* 1. Product Selection */}
+      {/* STEP 0: Business Domain */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
+          <Building2 className="w-5 h-5 text-primary" />
+          <span>1. Alege domeniul de activitate</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {businessDomains.map((domain) => (
+            <button
+              key={domain.id}
+              type="button"
+              onClick={() => {
+                setSelectedDomain(domain.id === selectedDomain ? "" : domain.id);
+                setSelectedCategory("");
+                setSelectedProduct("");
+              }}
+              className={`flex items-center gap-2 px-3 py-3 rounded-xl text-left text-sm font-medium transition-all border ${
+                selectedDomain === domain.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-card text-card-foreground border-border hover:border-primary/40 hover:bg-secondary"
+              }`}
+            >
+              <span className="flex-shrink-0">{DOMAIN_ICONS[domain.id]}</span>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-xs">{domain.name}</p>
+                <p className={`truncate text-[10px] ${
+                  selectedDomain === domain.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                }`}>{domain.description}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* STEP 1: Product Selection */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary" />
-          <span>1. Alege produsul</span>
+          <span>2. Alege produsul</span>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -144,7 +217,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           >
             Toate
           </button>
-          {productCategories.map((cat) => (
+          {availableCategories.map((cat) => (
             <button
               key={cat}
               type="button"
@@ -191,11 +264,11 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       <Separator />
 
-      {/* 2. Customization */}
+      {/* STEP 2: Customization */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <Paintbrush className="w-5 h-5 text-primary" />
-          <span>2. Personalizare</span>
+          <span>3. Personalizare</span>
         </div>
 
         <RadioGroup value={customType} onValueChange={(v) => setCustomType(v as "text" | "image")} className="flex gap-6">
@@ -234,26 +307,15 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             )}
           </div>
         )}
-
-        {/* Preview Mockup Button */}
-        {product && (customType === "text" ? true : true) && (
-          <ProductMockup
-            productName={product.name}
-            productCategory={product.category}
-            customType={customType}
-            customText={customText}
-            imagePreview={imagePreview}
-          />
-        )}
       </section>
 
       <Separator />
 
-      {/* 3. Finish & Quantity */}
+      {/* STEP 3: Finish & Quantity */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary" />
-          <span>3. Finisaj și cantitate</span>
+          <span>4. Finisaj și cantitate</span>
         </div>
 
         <RadioGroup value={finish} onValueChange={(v) => setFinish(v as Finish)} className="grid gap-3">
@@ -301,15 +363,28 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             </div>
           </Card>
         )}
+
+        {/* Preview Mockup - shows ONLY after product + finish are selected */}
+        {product && (
+          <ProductMockup
+            productName={product.name}
+            productCategory={product.category}
+            customType={customType}
+            customText={customText}
+            imagePreview={imagePreview}
+            finish={finish}
+            basePrice={product.basePrice}
+          />
+        )}
       </section>
 
       <Separator />
 
-      {/* 4. Contact */}
+      {/* STEP 4: Contact */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <User className="w-5 h-5 text-primary" />
-          <span>4. Date de contact</span>
+          <span>5. Date de contact</span>
         </div>
 
         <div className="grid gap-4">
