@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search,
   Heart, HardHat, UtensilsCrossed, Monitor, GraduationCap, Car,
@@ -63,6 +64,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [phone, setPhone] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     if (preselectedProductId) {
@@ -124,7 +126,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     quantity > 0 &&
     name.trim() &&
     email.trim() &&
-    phone.trim();
+    phone.trim() &&
+    acceptedTerms;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -402,6 +405,27 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           </div>
         </div>
       </section>
+
+      {/* STEP 5: Terms acceptance */}
+      <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card">
+        <Checkbox
+          id="terms"
+          checked={acceptedTerms}
+          onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+          className="mt-0.5"
+        />
+        <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+          Am citit și sunt de acord cu{" "}
+          <a href="/termeni-si-conditii" target="_blank" className="text-primary hover:underline font-medium">
+            Termenii și condițiile
+          </a>{" "}
+          și{" "}
+          <a href="/politica-confidentialitate" target="_blank" className="text-primary hover:underline font-medium">
+            Politica de confidențialitate
+          </a>. 
+          Sunt de acord cu prelucrarea datelor personale conform GDPR.
+        </label>
+      </div>
 
       <Button type="submit" size="lg" disabled={!isValid} className="w-full gap-2">
         <Send className="w-4 h-4" />
