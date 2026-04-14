@@ -11,7 +11,7 @@ const steps = [
 export default function HowItWorksSection() {
   return (
     <section id="cum-functioneaza" className="py-24 sm:py-32 relative overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -22,7 +22,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background max-w-[2560px] mx-auto">
       <Navbar />
       <HeroSection />
       <ServicesSection />
@@ -32,7 +32,7 @@ const Index = () => {
 
       {/* Order Form Section */}
       <section id="comanda" ref={orderRef} className="py-24 sm:py-32 bg-secondary/30">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
