@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://testserverr.lovable.app/sitemap.xml
+Sitemap: https://www.avozenevo.ro/sitemap.xml

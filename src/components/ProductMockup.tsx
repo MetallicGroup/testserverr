@@ -24,6 +24,7 @@ interface ProductMockupProps {
   imagePreview: string | null;
   finish: Finish;
   basePrice: number;
+  onFinishChange: (value: Finish) => void;
 }
 
 function MockupCard({
@@ -36,6 +37,7 @@ function MockupCard({
   finishKey,
   basePrice,
   isSelected,
+  onSelect,
 }: {
   productName: string;
   mockupImage: string;
@@ -46,6 +48,7 @@ function MockupCard({
   finishKey: Finish;
   basePrice: number;
   isSelected: boolean;
+  onSelect: (finish: Finish) => void;
 }) {
   const meta = FINISH_META[finishKey];
   const price = (basePrice * FINISH_MULTIPLIERS[finishKey]).toFixed(2);
@@ -60,9 +63,13 @@ function MockupCard({
   };
 
   return (
-    <div className={`flex-1 rounded-xl border-2 transition-all p-3 ${
+    <button
+      type="button"
+      onClick={() => onSelect(finishKey)}
+      className={`flex-1 rounded-xl border-2 transition-all p-3 text-left ${
       isSelected ? "border-primary shadow-lg bg-white" : "border-border/50 bg-white/80 opacity-75"
-    }`}>
+    }`}
+    >
       <div className="flex items-center justify-between mb-2">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.badge}`}>
           {meta.label}
@@ -124,7 +131,7 @@ function MockupCard({
       {isSelected && (
         <p className="text-center text-[10px] text-primary font-semibold mt-2">✓ Selectat</p>
       )}
-    </div>
+    </button>
   );
 }
 
@@ -136,6 +143,7 @@ export default function ProductMockup({
   imagePreview,
   finish,
   basePrice,
+  onFinishChange,
 }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
   const mockup = getMockupForProduct(productName, productCategory);
@@ -193,12 +201,13 @@ export default function ProductMockup({
                 finishKey={key}
                 basePrice={basePrice}
                 isSelected={finish === key}
+                onSelect={onFinishChange}
               />
             ))}
           </div>
 
           <p className="text-center text-[9px] text-gray-300 uppercase tracking-widest mt-4">
-            avozenevo mockup preview
+            avozenevo mockup previzualizare
           </p>
         </div>
 

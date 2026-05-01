@@ -12,9 +12,11 @@ import {
   Heart, HardHat, UtensilsCrossed, Monitor, GraduationCap, Car,
   ShoppingBag, CalendarDays, Dumbbell, Sparkles, Scale, Wheat, Building2,
 } from "lucide-react";
-import products, { productCategories } from "@/data/products";
 import businessDomains from "@/data/businessDomains";
 import ProductMockup from "@/components/ProductMockup";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { siteConfig, storageKeys } from "@/config/siteConfig";
+import { getProductsFromStore } from "@/lib/productStore";
 
 type Finish = "low" | "medium" | "high";
 
@@ -50,6 +52,7 @@ interface OrderFormProps {
 }
 
 export default function OrderForm({ preselectedProductId }: OrderFormProps) {
+  const [products, setProducts] = useState(() => getProductsFromStore().filter((p) => p.active));
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<string>("");
@@ -65,10 +68,19 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [submitted, setSubmitted] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setProducts(getProductsFromStore().filter((p) => p.active));
+  }, []);
 
   useEffect(() => {
     if (preselectedProductId) {
       setSelectedProduct(preselectedProductId);
+      setSelectedProductIds([preselectedProductId]);
       const p = products.find((pr) => pr.id === preselectedProductId);
       if (p) setSelectedCategory(p.category);
     }
@@ -83,10 +95,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
   // Available categories for the selected domain
   const availableCategories = useMemo(() => {
-    if (!domainProductIds) return productCategories;
+    if (!domainProductIds) return Array.from(new Set(products.map((p) => p.category)));
     const domainProducts = products.filter((p) => domainProductIds.has(p.id));
     return Array.from(new Set(domainProducts.map((p) => p.category)));
-  }, [domainProductIds]);
+  }, [domainProductIds, products]);
 
   const filteredProducts = useMemo(() => {
     let list = products;
@@ -94,9 +106,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     if (selectedCategory) list = list.filter((p) => p.category === selectedCategory);
     if (searchTerm) list = list.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     return list;
-  }, [domainProductIds, selectedCategory, searchTerm]);
+  }, [domainProductIds, selectedCategory, searchTerm, products]);
 
   const product = useMemo(() => products.find((p) => p.id === selectedProduct), [selectedProduct]);
+  const selectedProducts = useMemo(
+    () => products.filter((p) => selectedProductIds.includes(p.id)),
+    [products, selectedProductIds],
+  );
 
   const unitPrice = useMemo(() => {
     if (!product) return 0;
@@ -121,13 +137,15 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   }, []);
 
   const isValid =
-    selectedProduct &&
+    selectedProductIds.length > 0 &&
     (customType === "text" ? customText.trim() : imageFile) &&
     quantity > 0 &&
     name.trim() &&
     email.trim() &&
     phone.trim() &&
-    acceptedTerms;
+    acceptedTerms &&
+    honeypot.trim() === "" &&
+    (siteConfig.turnstileSiteKey ? turnstileToken : true);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +153,48 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       toast.error("Completează toate câmpurile obligatorii.");
       return;
     }
+    const orderPayload = {
+      createdAt: new Date().toISOString(),
+      name,
+      email,
+      phone,
+      products: selectedProducts.map((item) => ({
+        id: item.id,
+        name: item.name,
+        unitPrice: +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2),
+      })),
+      quantity,
+      finish,
+      customType,
+      customText,
+      imageFileName: imageFile?.name || "",
+      imagePreview,
+      message,
+    };
+
+    const previousOrders = JSON.parse(localStorage.getItem(storageKeys.orders) || "[]");
+    localStorage.setItem(storageKeys.orders, JSON.stringify([orderPayload, ...previousOrders].slice(0, 200)));
+
+    const whatsappMessage = [
+      "Salut! Am o comanda noua:",
+      "",
+      `Nume: ${name}`,
+      `Email: ${email}`,
+      `Telefon: ${phone}`,
+      `Produse: ${selectedProducts.map((item) => item.name).join(", ")}`,
+      `Finisaj: ${FINISH_LABELS[finish].label}`,
+      `Cantitate: ${quantity} buc`,
+      `Pret unitar estimat: ${unitPrice} RON`,
+      `Total estimat: ${totalPrice} RON`,
+      `Personalizare: ${customType === "text" ? customText : `Fisier incarcat: ${imageFile?.name || "Da"}`}`,
+      message ? `Mesaj client: ${message}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const waUrl = `https://wa.me/${siteConfig.whatsappDigits}?text=${encodeURIComponent(whatsappMessage)}`;
+    window.open(waUrl, "_blank", "noopener,noreferrer");
+
     setSubmitted(true);
     toast.success("Comanda a fost trimisă cu succes!");
   };
@@ -147,7 +207,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         </div>
         <h2 className="text-2xl font-bold text-foreground">Comandă trimisă!</h2>
         <div className="text-left space-y-3 text-sm text-muted-foreground">
-          <p><span className="font-semibold text-foreground">Produs:</span> {product?.name}</p>
+          <p><span className="font-semibold text-foreground">Produse:</span> {selectedProducts.map((item) => item.name).join(", ")}</p>
           <p><span className="font-semibold text-foreground">Personalizare:</span> {customType === "text" ? customText : imageFile?.name}</p>
           <p><span className="font-semibold text-foreground">Finisaj:</span> {FINISH_LABELS[finish].label}</p>
           <p><span className="font-semibold text-foreground">Cantitate:</span> {quantity} buc.</p>
@@ -159,7 +219,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           <p><span className="font-semibold text-foreground">Email:</span> {email}</p>
           <p><span className="font-semibold text-foreground">Telefon:</span> {phone}</p>
         </div>
-        <Button onClick={() => setSubmitted(false)} className="w-full">Plasează o nouă comandă</Button>
+        <Button onClick={() => setSubmitted(false)} className="w-full">Plaseaza o noua comanda</Button>
       </Card>
     );
   }
@@ -207,7 +267,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary" />
-          <span>2. Alege produsul</span>
+          <span>2. Alege unul sau mai multe produse</span>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -249,9 +309,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             <button
               key={p.id}
               type="button"
-              onClick={() => setSelectedProduct(p.id)}
+              onClick={() => {
+                setSelectedProduct(p.id);
+                setSelectedProductIds((prev) =>
+                  prev.includes(p.id) ? prev.filter((id) => id !== p.id) : [...prev, p.id],
+                );
+              }}
               className={`text-left px-3 py-2 rounded-md text-sm transition-all ${
-                selectedProduct === p.id
+                selectedProductIds.includes(p.id)
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-card text-card-foreground hover:bg-secondary"
               }`}
@@ -264,6 +329,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           )}
         </div>
       </section>
+
+      {selectedProducts.length > 0 && (
+        <Card className="p-3 bg-secondary/40 border-border">
+          <p className="text-xs font-semibold text-foreground mb-1">Produse selectate</p>
+          <p className="text-sm text-muted-foreground">{selectedProducts.map((item) => item.name).join(", ")}</p>
+        </Card>
+      )}
 
       <Separator />
 
@@ -296,7 +368,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           <div>
             {imagePreview ? (
               <div className="relative inline-block">
-                <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg border border-border" />
+                <img src={imagePreview} alt="Previzualizare" className="w-32 h-32 object-cover rounded-lg border border-border" />
                 <button type="button" onClick={removeImage} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1">
                   <X className="w-3 h-3" />
                 </button>
@@ -377,6 +449,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             imagePreview={imagePreview}
             finish={finish}
             basePrice={product.basePrice}
+            onFinishChange={setFinish}
           />
         )}
       </section>
@@ -403,6 +476,31 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             <Label htmlFor="phone">Telefon</Label>
             <Input id="phone" type="tel" placeholder="+40 712 345 678" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
           </div>
+          <div>
+            <Label htmlFor="message">Mesaj suplimentar (optional)</Label>
+            <Input id="message" placeholder="Deadline, observatii, culori preferate..." value={message} onChange={(e) => setMessage(e.target.value)} className="mt-1" />
+          </div>
+          <div className="hidden">
+            <Label htmlFor="website-field">Nu completa acest camp</Label>
+            <Input
+              id="website-field"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              autoComplete="off"
+              tabIndex={-1}
+            />
+          </div>
+          {siteConfig.turnstileSiteKey ? (
+            <div>
+              <Label>Protectie anti-spam</Label>
+              <TurnstileWidget siteKey={siteConfig.turnstileSiteKey} onTokenChange={setTurnstileToken} />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Protectia Turnstile este pregatita. Seteaza variabila `VITE_TURNSTILE_SITE_KEY` pentru activare.
+            </p>
+          )}
         </div>
       </section>
 
@@ -429,7 +527,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       <Button type="submit" size="lg" disabled={!isValid} className="w-full gap-2">
         <Send className="w-4 h-4" />
-        Trimite comanda
+        Trimite comanda pe WhatsApp
       </Button>
     </form>
   );

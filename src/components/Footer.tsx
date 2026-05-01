@@ -1,6 +1,7 @@
 import { Phone, Mail, MapPin, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/avozenevo-logo.png";
+import { siteConfig } from "@/config/siteConfig";
 
 export default function Footer() {
   return (
@@ -33,13 +34,14 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="/termeni-si-conditii" className="hover:text-foreground transition-colors">Termeni și condiții</a></li>
               <li><a href="/politica-confidentialitate" className="hover:text-foreground transition-colors">Politica de confidențialitate</a></li>
+              <li><a href="/despre-noi" className="hover:text-foreground transition-colors">Despre noi</a></li>
               <li>
-                <a href="https://anpc.ro" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
+                <a href={siteConfig.legal.anpcUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
                   ANPC <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
               <li>
-                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
+                <a href={siteConfig.legal.odrUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
                   SOL — Soluționare online litigii <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
@@ -48,9 +50,9 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-foreground mb-3">Contact</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-primary" /> contact@avozenevo.ro</li>
-              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary" /> +40 764 652 773</li>
-              <li className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> București, România</li>
+              <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-primary" /> {siteConfig.email}</li>
+              <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary" /> {siteConfig.phoneDisplay}</li>
+              <li className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> {siteConfig.cityCountry}</li>
             </ul>
           </div>
         </motion.div>
@@ -59,11 +61,14 @@ export default function Footer() {
             © {new Date().getFullYear()} avozenevo. Toate drepturile rezervate.
           </p>
           <div className="flex items-center gap-4">
-            <a href="https://anpc.ro" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <a href={siteConfig.legal.anpcUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               ANPC
             </a>
-            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <a href={siteConfig.legal.odrUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               SOL/ODR
+            </a>
+            <a href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Admin
             </a>
           </div>
         </div>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <text x="80" y="260" fill="#ffffff" font-size="76" font-family="Arial, sans-serif" font-weight="700">Avozenevo</text>
+  <text x="80" y="340" fill="#dbeafe" font-size="42" font-family="Arial, sans-serif">Produse personalizate pentru afaceri</text>
+  <text x="80" y="410" fill="#bfdbfe" font-size="30" font-family="Arial, sans-serif">Comenzi B2B " Livrare nationala " WhatsApp</text>
+</svg>

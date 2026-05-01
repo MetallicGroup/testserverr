@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://testserverr.lovable.app/</loc>
+    <loc>https://www.avozenevo.ro/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://testserverr.lovable.app/termeni-si-conditii</loc>
+    <loc>https://www.avozenevo.ro/termeni-si-conditii</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://testserverr.lovable.app/politica-confidentialitate</loc>
+    <loc>https://www.avozenevo.ro/politica-confidentialitate</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.avozenevo.ro/despre-noi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

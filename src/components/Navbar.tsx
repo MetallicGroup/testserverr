@@ -8,6 +8,7 @@ const links = [
   { label: "Galerie", href: "#galerie" },
   { label: "Cum funcționează", href: "#cum-functioneaza" },
   { label: "Comandă", href: "#comanda" },
+  { label: "Despre noi", href: "/despre-noi" },
 ];
 
 export default function Navbar() {

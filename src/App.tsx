@@ -8,6 +8,8 @@ import NotFound from "./pages/NotFound.tsx";
 import PoliticaConfidentialitate from "./pages/PoliticaConfidentialitate.tsx";
 import TermeniSiConditii from "./pages/TermeniSiConditii.tsx";
 import CookieConsent from "./components/CookieConsent.tsx";
+import DespreNoi from "./pages/DespreNoi.tsx";
+import AdminPanel from "./pages/AdminPanel.tsx";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +23,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/politica-confidentialitate" element={<PoliticaConfidentialitate />} />
           <Route path="/termeni-si-conditii" element={<TermeniSiConditii />} />
+          <Route path="/despre-noi" element={<DespreNoi />} />
+          <Route path="/admin" element={<AdminPanel />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,10 +1,11 @@
 import { MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { siteConfig } from "@/config/siteConfig";
 
 export default function WhatsAppButton() {
   return (
     <motion.a
-      href="https://wa.me/40764652773"
+      href={`https://wa.me/${siteConfig.whatsappDigits}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Contactează-ne pe WhatsApp"
