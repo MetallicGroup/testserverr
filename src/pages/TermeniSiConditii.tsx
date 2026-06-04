@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SiteLink from "@/components/SiteLink";
 
 export default function TermeniSiConditii() {
   return (
@@ -52,7 +53,10 @@ export default function TermeniSiConditii() {
           <h2>7. Protecția datelor</h2>
           <p>
             Prelucrarea datelor personale se face conform{" "}
-            <a href="/politica-confidentialitate" className="text-primary">Politicii de Confidențialitate</a>.
+            <SiteLink to="/politica-confidentialitate" className="text-primary hover:underline">
+              Politicii de Confidențialitate
+            </SiteLink>
+            .
           </p>
 
           <h2>8. Litigii</h2>

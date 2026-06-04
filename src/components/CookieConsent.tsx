@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import SiteLink from "@/components/SiteLink";
 import { Cookie, Shield } from "lucide-react";
 
 export default function CookieConsent() {
@@ -48,13 +49,13 @@ export default function CookieConsent() {
                   Acest website utilizează cookie-uri pentru a îmbunătăți experiența de navigare. 
                   Datele tale personale sunt protejate conform Regulamentului General privind Protecția Datelor (GDPR). 
                   Prin continuarea navigării, ești de acord cu{" "}
-                  <a href="/politica-confidentialitate" className="text-primary hover:underline font-medium">
+                  <SiteLink to="/politica-confidentialitate" className="text-primary hover:underline font-medium">
                     Politica de confidențialitate
-                  </a>{" "}
+                  </SiteLink>{" "}
                   și{" "}
-                  <a href="/termeni-si-conditii" className="text-primary hover:underline font-medium">
+                  <SiteLink to="/termeni-si-conditii" className="text-primary hover:underline font-medium">
                     Termenii și condițiile
-                  </a>.
+                  </SiteLink>.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button onClick={accept} className="gap-2">

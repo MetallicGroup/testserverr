@@ -36,9 +36,12 @@ export default function ProductSlider() {
     const speed = 0.4; // px per frame
 
     const step = () => {
-      pos += speed;
-      // Reset seamlessly when first set scrolls out
       const half = el.scrollWidth / 2;
+      if (half <= 0) {
+        raf = requestAnimationFrame(step);
+        return;
+      }
+      pos += speed;
       if (pos >= half) pos = 0;
       el.scrollLeft = pos;
       raf = requestAnimationFrame(step);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import SiteLink from "@/components/SiteLink";
 import heroSlide1 from "@/assets/hero-slide-1.jpg";
 import heroSlide2 from "@/assets/hero-slide-2.jpg";
 import heroSlide3 from "@/assets/hero-slide-3.jpg";
@@ -90,19 +91,19 @@ export default function HeroSection() {
             transition={{ duration: 0.7, delay: 0.9 }}
             className="mt-10 flex flex-col sm:flex-row items-start gap-4"
           >
-            <a
-              href="#comanda"
+            <SiteLink
+              section="comanda"
               className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-primary text-primary-foreground font-bold text-lg hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5"
             >
               Creează comanda
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </a>
-            <a
-              href="#galerie"
+            </SiteLink>
+            <SiteLink
+              section="galerie"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-border text-foreground font-semibold hover:bg-secondary transition-all duration-300"
             >
               Descoperă produsele
-            </a>
+            </SiteLink>
           </motion.div>
 
           {/* Slide indicators */}

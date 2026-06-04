@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import SiteLink from "@/components/SiteLink";
 import bigProducts from "@/assets/big-products.jpg";
 import collageSmall from "@/assets/collage-small.jpg";
 import textilesShowcase from "@/assets/textiles-showcase.jpg";
@@ -113,13 +114,13 @@ export default function ShowcaseGallery() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-center mt-12"
         >
-          <a
-            href="#comanda"
+          <SiteLink
+            section="comanda"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-primary text-primary-foreground font-bold text-lg hover:shadow-xl hover:shadow-primary/25 transition-all duration-300"
           >
             Solicită ofertă personalizată
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </SiteLink>
         </motion.div>
       </div>
     </section>

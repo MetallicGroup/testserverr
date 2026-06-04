@@ -1,9 +1,14 @@
 import { Phone, Mail, MapPin, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/avozenevo-logo.png";
+import SiteLink from "@/components/SiteLink";
+import { footerLegalLinks, footerSectionLinks } from "@/config/navigation";
+import { useSiteNavigate } from "@/hooks/useSiteNavigate";
 import { siteConfig } from "@/config/siteConfig";
 
 export default function Footer() {
+  const { goHome } = useSiteNavigate();
+
   return (
     <footer className="py-16 border-t border-border bg-secondary/20">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,7 +20,16 @@ export default function Footer() {
           className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12"
         >
           <div>
-            <img src={logo} alt="Avozenevo" className="h-10 w-auto mb-3" />
+            <a
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                goHome({ top: true });
+              }}
+              className="inline-block"
+            >
+              <img src={logo} alt="Avozenevo" className="h-10 w-auto mb-3" />
+            </a>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Produse personalizate pentru business-ul tău. Calitate, rapiditate și flexibilitate.
             </p>
@@ -23,27 +37,42 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-foreground mb-3">Navigare</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/#servicii" className="hover:text-foreground transition-colors">Servicii</a></li>
-              <li><a href="/#galerie" className="hover:text-foreground transition-colors">Galerie</a></li>
-              <li><a href="/#cum-functioneaza" className="hover:text-foreground transition-colors">Cum funcționează</a></li>
-              <li><a href="/#comanda" className="hover:text-foreground transition-colors">Comandă</a></li>
+              {footerSectionLinks.map((link) => (
+                <li key={link.sectionId}>
+                  <SiteLink section={link.sectionId} className="hover:text-foreground transition-colors">
+                    {link.label}
+                  </SiteLink>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
             <h4 className="font-bold text-foreground mb-3">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/termeni-si-conditii" className="hover:text-foreground transition-colors">Termeni și condiții</a></li>
-              <li><a href="/politica-confidentialitate" className="hover:text-foreground transition-colors">Politica de confidențialitate</a></li>
-              <li><a href="/despre-noi" className="hover:text-foreground transition-colors">Despre noi</a></li>
+              {footerLegalLinks.map((link) => (
+                <li key={link.path}>
+                  <SiteLink to={link.path} className="hover:text-foreground transition-colors">
+                    {link.label}
+                  </SiteLink>
+                </li>
+              ))}
               <li>
-                <a href={siteConfig.legal.anpcUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
+                <SiteLink
+                  href={siteConfig.legal.anpcUrl}
+                  external
+                  className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
                   ANPC <ExternalLink className="w-3 h-3" />
-                </a>
+                </SiteLink>
               </li>
               <li>
-                <a href={siteConfig.legal.odrUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
+                <SiteLink
+                  href={siteConfig.legal.odrUrl}
+                  external
+                  className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+                >
                   SOL — Soluționare online litigii <ExternalLink className="w-3 h-3" />
-                </a>
+                </SiteLink>
               </li>
             </ul>
           </div>
@@ -61,15 +90,15 @@ export default function Footer() {
             © {new Date().getFullYear()} avozenevo. Toate drepturile rezervate.
           </p>
           <div className="flex items-center gap-4">
-            <a href={siteConfig.legal.anpcUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <SiteLink href={siteConfig.legal.anpcUrl} external className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               ANPC
-            </a>
-            <a href={siteConfig.legal.odrUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            </SiteLink>
+            <SiteLink href={siteConfig.legal.odrUrl} external className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               SOL/ODR
-            </a>
-            <a href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            </SiteLink>
+            <SiteLink to="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Admin
-            </a>
+            </SiteLink>
           </div>
         </div>
       </div>

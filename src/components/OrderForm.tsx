@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import SiteLink from "@/components/SiteLink";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -514,13 +515,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         />
         <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
           Am citit și sunt de acord cu{" "}
-          <a href="/termeni-si-conditii" target="_blank" className="text-primary hover:underline font-medium">
+          <SiteLink to="/termeni-si-conditii" className="text-primary hover:underline font-medium">
             Termenii și condițiile
-          </a>{" "}
+          </SiteLink>{" "}
           și{" "}
-          <a href="/politica-confidentialitate" target="_blank" className="text-primary hover:underline font-medium">
+          <SiteLink to="/politica-confidentialitate" className="text-primary hover:underline font-medium">
             Politica de confidențialitate
-          </a>. 
+          </SiteLink>. 
           Sunt de acord cu prelucrarea datelor personale conform GDPR.
         </label>
       </div>

@@ -73,7 +73,8 @@
       "/",
       "/termeni-si-conditii",
       "/politica-confidentialitate",
-      "/despre-noi"
+      "/despre-noi",
+      "/seap-sicap"
     ]
   },
   "devDependencies": {

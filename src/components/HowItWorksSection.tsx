@@ -1,5 +1,6 @@
 import { MousePointerClick, Paintbrush, Hash, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import SiteLink from "@/components/SiteLink";
 
 const steps = [
   { icon: MousePointerClick, title: "Alegi produsul", desc: "Selectează din peste 100 de produse disponibile.", color: "from-primary to-energy-blue" },
@@ -64,12 +65,12 @@ export default function HowItWorksSection() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="text-center mt-16"
         >
-          <a
-            href="#comanda"
+          <SiteLink
+            section="comanda"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-primary text-primary-foreground font-bold text-lg hover:shadow-xl hover:shadow-primary/25 transition-all duration-300"
           >
             Începe acum →
-          </a>
+          </SiteLink>
         </motion.div>
       </div>
     </section>
