@@ -115,13 +115,13 @@ export default function SeapSicap() {
               </div>
             </a>
             <a
-              href={`tel:+${company.officePhoneDigits}`}
+              href={`tel:+${siteConfig.phoneDigits}`}
               className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 hover:border-primary/40 transition-colors"
             >
               <Phone className="w-5 h-5 text-primary shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Telefon</p>
-                <p className="font-semibold text-foreground">{company.officePhoneDisplay}</p>
+                <p className="font-semibold text-foreground">{siteConfig.phoneDisplay}</p>
               </div>
             </a>
             <a

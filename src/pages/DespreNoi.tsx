@@ -27,7 +27,7 @@ export default function DespreNoi() {
             </p>
             <p><span className="font-semibold">Website:</span> {siteConfig.websiteUrl}</p>
             <p><span className="font-semibold">Email:</span> {siteConfig.company.tendersEmail}</p>
-            <p><span className="font-semibold">Telefon:</span> {siteConfig.company.officePhoneDisplay}</p>
+            <p><span className="font-semibold">Telefon:</span> {siteConfig.phoneDisplay}</p>
             <p className="pt-2">
               <SiteLink to="/seap-sicap" className="text-primary font-medium hover:underline">
                 Informații achiziții publice SEAP / SICAP →

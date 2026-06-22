@@ -21,8 +21,8 @@ export const siteConfig = {
     eLicitationUrl: "https://www.e-licitatie.ro",
     eLicitationRole: "Ofertant",
     tendersEmail: "office@avozenevo.ro",
-    officePhoneDisplay: "+40 793 645 564",
-    officePhoneDigits: "40793645564",
+    officePhoneDisplay: "0784 998 866",
+    officePhoneDigits: "40784998866",
     description:
       "Partener de încredere în personalizarea produselor promoționale: imprimare, gravură laser, design grafic și materiale publicitare pentru companii și instituții publice.",
   },

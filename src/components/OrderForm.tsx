@@ -19,20 +19,7 @@ import TurnstileWidget from "@/components/TurnstileWidget";
 import { siteConfig, storageKeys } from "@/config/siteConfig";
 import { getProductsFromStore } from "@/lib/productStore";
 import { generateOfferPdf } from "@/lib/generateOfferPdf";
-
-type Finish = "low" | "medium" | "high";
-
-const FINISH_MULTIPLIERS: Record<Finish, number> = {
-  low: 1,
-  medium: 1.6,
-  high: 2.5,
-};
-
-const FINISH_LABELS: Record<Finish, { label: string; description: string }> = {
-  low: { label: "Low Cost", description: "Imprimare simplă, materiale standard" },
-  medium: { label: "Medium", description: "Calitate medie, finisaje îmbunătățite" },
-  high: { label: "High-Ticket", description: "Premium, materiale de top" },
-};
+import { FINISH_LABELS, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
 
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
   medical: <Heart className="w-5 h-5" />,
@@ -602,7 +589,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           </div>
           <div>
             <Label htmlFor="phone">Telefon</Label>
-            <Input id="phone" type="tel" placeholder="+40 712 345 678" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
+            <Input id="phone" type="tel" placeholder="0784 998 866" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
           </div>
           <div>
             <Label htmlFor="message">Mesaj suplimentar (optional)</Label>

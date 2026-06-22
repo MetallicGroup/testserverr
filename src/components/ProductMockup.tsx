@@ -7,15 +7,7 @@ import jsPDF from "jspdf";
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
-
-type Finish = "low" | "medium" | "high";
-
-const FINISH_MULTIPLIERS: Record<Finish, number> = { low: 1, medium: 1.6, high: 2.5 };
-const FINISH_META: Record<Finish, { label: string; color: string; badge: string }> = {
-  low:    { label: "Low Cost",    color: "#6b7280", badge: "bg-gray-100 text-gray-700" },
-  medium: { label: "Medium",      color: "#2563eb", badge: "bg-blue-100 text-blue-700" },
-  high:   { label: "High-Ticket", color: "#7c3aed", badge: "bg-purple-100 text-purple-700" },
-};
+import { FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
 
 interface ProductMockupProps {
   productName: string;
