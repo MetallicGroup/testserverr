@@ -4,8 +4,8 @@ export const siteConfig = {
   websiteUrl: "https://www.avozenevo.ro",
   email: "office@avozenevo.ro",
   phoneDisplay: "0784 998 866",
-  phoneDigits: "407849988866",
-  whatsappDigits: "407849988866",
+  phoneDigits: "40784998866",
+  whatsappDigits: "40784998866",
   whatsappDisplay: "0784998866",
   cityCountry: "Bucuresti, Romania",
   company: {
