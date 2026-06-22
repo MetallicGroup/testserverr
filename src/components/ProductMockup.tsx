@@ -6,6 +6,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
+import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
 
 type Finish = "low" | "medium" | "high";
 
@@ -152,22 +153,46 @@ export default function ProductMockup({
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
 
   const handleDownloadPDF = useCallback(async () => {
-    if (!mockupRef.current) return;
-    const canvas = await html2canvas(mockupRef.current, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-    });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const pdfW = pdf.internal.pageSize.getWidth();
-    const pdfH = pdf.internal.pageSize.getHeight();
-    const ratio = Math.min(pdfW / canvas.width, pdfH / canvas.height) * 0.85;
-    const w = canvas.width * ratio;
-    const h = canvas.height * ratio;
-    pdf.addImage(imgData, "PNG", (pdfW - w) / 2, (pdfH - h) / 2, w, h);
-    pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
-  }, [productName]);
+    try {
+      const imgData = await renderProductMockupCanvas(
+        productName,
+        productCategory,
+        customType,
+        customText,
+        imagePreview,
+      );
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+      const img = new Image();
+      img.src = imgData;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Imagine invalidă"));
+      });
+      const ratio = Math.min(pdfW / img.width, pdfH / img.height) * 0.85;
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      pdf.addImage(imgData, "PNG", (pdfW - w) / 2, (pdfH - h) / 2, w, h);
+      pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+    } catch {
+      if (!mockupRef.current) return;
+      const canvas = await html2canvas(mockupRef.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pdfW / canvas.width, pdfH / canvas.height) * 0.85;
+      const w = canvas.width * ratio;
+      const h = canvas.height * ratio;
+      pdf.addImage(imgData, "PNG", (pdfW - w) / 2, (pdfH - h) / 2, w, h);
+      pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+    }
+  }, [productName, productCategory, customType, customText, imagePreview]);
 
   return (
     <Dialog>

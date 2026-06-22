@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search,
+  Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search, Download,
   Heart, HardHat, UtensilsCrossed, Monitor, GraduationCap, Car,
   ShoppingBag, CalendarDays, Dumbbell, Sparkles, Scale, Wheat, Building2,
 } from "lucide-react";
@@ -18,6 +18,7 @@ import ProductMockup from "@/components/ProductMockup";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { siteConfig, storageKeys } from "@/config/siteConfig";
 import { getProductsFromStore } from "@/lib/productStore";
+import { generateOfferPdf } from "@/lib/generateOfferPdf";
 
 type Finish = "low" | "medium" | "high";
 
@@ -142,6 +143,42 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
   const totalPrice = useMemo(() => +(unitPrice * quantity).toFixed(2), [unitPrice, quantity]);
 
+  const offerLineItems = useMemo(
+    () =>
+      selectedProducts.map((item) => {
+        const unit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
+        return {
+          name: item.name,
+          category: item.category,
+          quantity,
+          unitPrice: unit,
+          totalPrice: +(unit * quantity).toFixed(2),
+        };
+      }),
+    [selectedProducts, finish, quantity],
+  );
+
+  const offerGrandTotal = useMemo(
+    () => +offerLineItems.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2),
+    [offerLineItems],
+  );
+
+  const buildOfferPdfInput = useCallback(
+    () => ({
+      clientName: name.trim(),
+      clientEmail: email.trim(),
+      clientPhone: phone.trim(),
+      clientMessage: message.trim() || undefined,
+      finishLabel: FINISH_LABELS[finish].label,
+      customType,
+      customText,
+      imagePreview,
+      lineItems: offerLineItems,
+      grandTotal: offerGrandTotal,
+    }),
+    [name, email, phone, message, finish, customType, customText, imagePreview, offerLineItems, offerGrandTotal],
+  );
+
   const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -158,6 +195,23 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   }, []);
 
   const hasProductDetails = selectedProductIds.length > 0;
+
+  const handleDownloadOfferPdf = useCallback(async () => {
+    if (!hasProductDetails) {
+      toast.error("Selectează cel puțin un produs pentru oferta PDF.");
+      return;
+    }
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      toast.error("Completează datele de contact înainte de a descărca oferta PDF.");
+      return;
+    }
+    try {
+      await generateOfferPdf(buildOfferPdfInput());
+      toast.success("Oferta PDF a fost descărcată.");
+    } catch {
+      toast.error("Oferta PDF nu a putut fi generată.");
+    }
+  }, [hasProductDetails, name, email, phone, buildOfferPdfInput]);
 
   const isValid =
     name.trim() &&
@@ -180,9 +234,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       lines.push(
         `Produse: ${selectedProducts.map((item) => item.name).join(", ")}`,
         `Finisaj: ${FINISH_LABELS[finish].label}`,
-        `Cantitate: ${quantity} buc`,
-        `Preț unitar estimat: ${unitPrice} RON`,
-        `Total estimat: ${totalPrice} RON`,
+        `Cantitate: ${quantity} buc / produs`,
+        `Total estimat: ${offerGrandTotal} RON`,
       );
       if (customType === "text" && customText.trim()) {
         lines.push(`Personalizare text: ${customText}`);
@@ -242,6 +295,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       toast.error("Emailul nu a putut fi trimis, dar WhatsApp-ul se deschide.");
     }
 
+    if (hasProductDetails) {
+      try {
+        await generateOfferPdf(buildOfferPdfInput());
+      } catch {
+        toast.error("Oferta PDF nu a putut fi generată automat.");
+      }
+    }
+
     window.open(waUrl, "_blank", "noopener,noreferrer");
     setSubmitted(true);
     setSubmitting(false);
@@ -257,6 +318,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         <h2 className="text-2xl font-bold text-foreground">Mulțumim!</h2>
         <p className="text-muted-foreground">
           Te vom contacta în cel mai scurt timp la numărul sau adresa de email furnizate.
+          {hasProductDetails && " Oferta PDF a fost descărcată pe dispozitivul tău."}
         </p>
         <div className="text-left space-y-3 text-sm text-muted-foreground">
           <p><span className="font-semibold text-foreground">Nume:</span> {name}</p>
@@ -270,9 +332,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                 <p><span className="font-semibold text-foreground">Personalizare:</span> {customType === "text" ? customText : imageFile?.name}</p>
               )}
               <p><span className="font-semibold text-foreground">Finisaj:</span> {FINISH_LABELS[finish].label}</p>
-              <p><span className="font-semibold text-foreground">Cantitate:</span> {quantity} buc.</p>
-              <p><span className="font-semibold text-foreground">Preț unitar:</span> {unitPrice} RON</p>
-              <p className="text-lg font-bold text-foreground">Total estimat: {totalPrice} RON</p>
+              <p><span className="font-semibold text-foreground">Cantitate:</span> {quantity} buc. / produs</p>
+              <p className="text-lg font-bold text-foreground">Total estimat: {offerGrandTotal} RON</p>
             </>
           )}
           {message.trim() && (
@@ -592,10 +653,24 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         </label>
       </div>
 
-      <Button type="submit" size="lg" disabled={!isValid || submitting} className="w-full gap-2">
-        <Send className="w-4 h-4" />
-        {submitting ? "Se trimite..." : "Trimite solicitarea"}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        {hasProductDetails && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={handleDownloadOfferPdf}
+            className="w-full gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Descarcă ofertă PDF
+          </Button>
+        )}
+        <Button type="submit" size="lg" disabled={!isValid || submitting} className="w-full gap-2">
+          <Send className="w-4 h-4" />
+          {submitting ? "Se trimite..." : "Trimite solicitarea"}
+        </Button>
+      </div>
 
       <p className="text-xs text-center text-muted-foreground">
         Solicitarea ajunge pe WhatsApp ({siteConfig.whatsappDisplay}) și pe email ({siteConfig.email}).
