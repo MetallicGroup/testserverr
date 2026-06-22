@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { siteConfig } from "@/config/siteConfig";
 
 export default function PoliticaConfidentialitate() {
   return (
@@ -66,7 +67,7 @@ export default function PoliticaConfidentialitate() {
           <h2>8. Contact</h2>
           <p>
             Pentru exercitarea drepturilor sau întrebări privind datele personale, contactați-ne la:{" "}
-            <a href="mailto:contact@avozenevo.ro" className="text-primary">contact@avozenevo.ro</a>
+            <a href={`mailto:${siteConfig.email}`} className="text-primary">{siteConfig.email}</a>
           </p>
           <p>
             Dacă considerați că drepturile dumneavoastră nu au fost respectate, puteți depune o plângere 

@@ -75,7 +75,7 @@ export default function ShowcaseGallery() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
-              className={`group relative overflow-hidden rounded-2xl cursor-pointer ${item.span}`}
+              className={`group relative overflow-hidden rounded-2xl ${item.span}`}
             >
               <div className={`relative ${item.height} overflow-hidden`}>
                 <img
@@ -96,9 +96,6 @@ export default function ShowcaseGallery() {
                   >
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">{item.title}</h3>
                     <p className="text-sm text-white/80 max-w-md leading-relaxed">{item.subtitle}</p>
-                    <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                      Vezi mai mult <ArrowRight className="w-4 h-4" />
-                    </div>
                   </motion.div>
                 </div>
               </div>

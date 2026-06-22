@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { siteConfig } from "@/config/siteConfig";
 
 interface Props {
   children: ReactNode;
@@ -26,7 +27,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md text-center space-y-4">
             <h1 className="text-2xl font-bold text-foreground">Ceva nu a funcționat</h1>
             <p className="text-muted-foreground">
-              Reîncarcă pagina. Dacă problema persistă, contactează-ne la contact@avozenevo.ro.
+              Reîncarcă pagina. Dacă problema persistă, contactează-ne la {siteConfig.email}.
             </p>
             <button
               type="button"

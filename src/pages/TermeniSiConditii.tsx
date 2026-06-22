@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SiteLink from "@/components/SiteLink";
+import { siteConfig } from "@/config/siteConfig";
 
 export default function TermeniSiConditii() {
   return (
@@ -47,7 +48,7 @@ export default function TermeniSiConditii() {
           <p>
             Produsele beneficiază de garanție conform legislației în vigoare. Reclamațiile se pot depune 
             în termen de 14 zile de la recepția produselor la adresa de email{" "}
-            <a href="mailto:contact@avozenevo.ro" className="text-primary">contact@avozenevo.ro</a>.
+            <a href={`mailto:${siteConfig.email}`} className="text-primary">{siteConfig.email}</a>.
           </p>
 
           <h2>7. Protecția datelor</h2>

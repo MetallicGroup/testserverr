@@ -41,10 +41,12 @@ const Index = () => {
             className="text-center mb-12"
           >
             <span className="inline-block px-5 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4">
-              Calculator
+              Contact
             </span>
-            <h2 className="text-4xl sm:text-5xl font-black text-foreground">Calculator comandă</h2>
-            <p className="mt-4 text-lg text-muted-foreground">Completează formularul și primește oferta instant.</p>
+            <h2 className="text-4xl sm:text-5xl font-black text-foreground">Solicită ofertă personalizată</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Lasă-ne datele tale de contact și te sunăm noi — fără să cauți prin catalog.
+            </p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
