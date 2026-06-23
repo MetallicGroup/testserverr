@@ -5,9 +5,14 @@ import { FINISH_CANVAS_EFFECTS, type Finish } from "@/lib/finishOptions";
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    const isExternalHttp =
+      (src.startsWith("http://") || src.startsWith("https://")) &&
+      !src.startsWith(window.location.origin);
+    if (isExternalHttp) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Nu s-a putut încărca imaginea: ${src}`));
+    img.onerror = () => reject(new Error(`Nu s-a putut încărca imaginea: ${src.slice(0, 80)}`));
     img.src = src;
   });
 }
@@ -60,9 +65,14 @@ export async function renderProductMockupCanvas(
   const mockup = getMockupForProduct(productName, productCategory, finish);
   const productImg = await loadImage(mockup.image);
 
+  const sourceW = productImg.naturalWidth || 800;
+  const sourceH = productImg.naturalHeight || 800;
+  const maxExportWidth = 1200;
+  const exportScale = sourceW > maxExportWidth ? maxExportWidth / sourceW : 1;
+  const width = Math.round(sourceW * exportScale);
+  const height = Math.round(sourceH * exportScale);
+
   const canvas = document.createElement("canvas");
-  const width = productImg.naturalWidth || 800;
-  const height = productImg.naturalHeight || 800;
   canvas.width = width;
   canvas.height = height;
 
