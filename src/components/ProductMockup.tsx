@@ -18,6 +18,7 @@ interface ProductMockupProps {
   finish: Finish;
   basePrice: number;
   onFinishChange: (value: Finish) => void;
+  triggerLabel?: string;
 }
 
 function MockupCard({
@@ -137,6 +138,7 @@ export default function ProductMockup({
   finish,
   basePrice,
   onFinishChange,
+  triggerLabel,
 }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
   const mockup = getMockupForProduct(productName, productCategory);
@@ -189,9 +191,9 @@ export default function ProductMockup({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="gap-2 w-full mt-3">
+        <Button type="button" variant="outline" className="gap-2 w-full">
           <Eye className="w-4 h-4" />
-          Compară finisaje & Preview mockup
+          {triggerLabel ?? "Compară finisaje & Preview mockup"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl">

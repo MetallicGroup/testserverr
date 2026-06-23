@@ -63,7 +63,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [products, setProducts] = useState(() => getProductsFromStore().filter((p) => p.active));
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [previewProductId, setPreviewProductId] = useState<string>("");
   const [customType, setCustomType] = useState<"text" | "image">("text");
   const [customText, setCustomText] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -88,12 +88,41 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
   useEffect(() => {
     if (preselectedProductId) {
-      setSelectedProduct(preselectedProductId);
+      setPreviewProductId(preselectedProductId);
       setSelectedProductIds([preselectedProductId]);
       const p = products.find((pr) => pr.id === preselectedProductId);
       if (p) setSelectedCategory(p.category);
     }
-  }, [preselectedProductId]);
+  }, [preselectedProductId, products]);
+
+  const toggleProductSelection = useCallback((productId: string) => {
+    setSelectedProductIds((prev) => {
+      if (prev.includes(productId)) {
+        const next = prev.filter((id) => id !== productId);
+        setPreviewProductId((current) =>
+          current === productId ? (next[next.length - 1] ?? "") : current,
+        );
+        return next;
+      }
+      setPreviewProductId(productId);
+      return [...prev, productId];
+    });
+  }, []);
+
+  const removeSelectedProduct = useCallback((productId: string) => {
+    setSelectedProductIds((prev) => {
+      const next = prev.filter((id) => id !== productId);
+      setPreviewProductId((current) =>
+        current === productId ? (next[next.length - 1] ?? "") : current,
+      );
+      return next;
+    });
+  }, []);
+
+  const clearSelectedProducts = useCallback(() => {
+    setSelectedProductIds([]);
+    setPreviewProductId("");
+  }, []);
 
   // Get products filtered by domain first, then by category
   const domainProductIds = useMemo(() => {
@@ -117,18 +146,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     return list;
   }, [domainProductIds, selectedCategory, searchTerm, products]);
 
-  const product = useMemo(() => products.find((p) => p.id === selectedProduct), [selectedProduct]);
+  const previewProduct = useMemo(
+    () => products.find((p) => p.id === previewProductId),
+    [products, previewProductId],
+  );
   const selectedProducts = useMemo(
     () => products.filter((p) => selectedProductIds.includes(p.id)),
     [products, selectedProductIds],
   );
-
-  const unitPrice = useMemo(() => {
-    if (!product) return 0;
-    return +(product.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
-  }, [product, finish]);
-
-  const totalPrice = useMemo(() => +(unitPrice * quantity).toFixed(2), [unitPrice, quantity]);
 
   const offerLineItems = useMemo(
     () =>
@@ -356,7 +381,6 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               onClick={() => {
                 setSelectedDomain(domain.id === selectedDomain ? "" : domain.id);
                 setSelectedCategory("");
-                setSelectedProduct("");
               }}
               className={`flex items-center gap-2 px-3 py-3 rounded-xl text-left text-sm font-medium transition-all border ${
                 selectedDomain === domain.id
@@ -385,6 +409,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           <span>2. Alege unul sau mai multe produse <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
+        {selectedCategory && (
+          <p className="text-xs text-muted-foreground">
+            Categorie activă: <span className="font-semibold text-foreground">{selectedCategory}</span>
+            {" · "}
+            Poți schimba categoria fără să pierzi produsele deja selectate.
+          </p>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -399,7 +431,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             <button
               key={cat}
               type="button"
-              onClick={() => { setSelectedCategory(cat); setSelectedProduct(""); }}
+              onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 selectedCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               }`}
@@ -424,12 +456,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             <button
               key={p.id}
               type="button"
-              onClick={() => {
-                setSelectedProduct(p.id);
-                setSelectedProductIds((prev) =>
-                  prev.includes(p.id) ? prev.filter((id) => id !== p.id) : [...prev, p.id],
-                );
-              }}
+              onClick={() => toggleProductSelection(p.id)}
               className={`text-left px-3 py-2 rounded-md text-sm transition-all ${
                 selectedProductIds.includes(p.id)
                   ? "bg-primary text-primary-foreground shadow-sm"
@@ -446,9 +473,57 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       </section>
 
       {selectedProducts.length > 0 && (
-        <Card className="p-3 bg-secondary/40 border-border">
-          <p className="text-xs font-semibold text-foreground mb-1">Produse selectate</p>
-          <p className="text-sm text-muted-foreground">{selectedProducts.map((item) => item.name).join(", ")}</p>
+        <Card className="p-4 bg-secondary/40 border-border space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              Produse selectate ({selectedProducts.length})
+            </p>
+            <button
+              type="button"
+              onClick={clearSelectedProducts}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              Șterge toate
+            </button>
+          </div>
+          <ul className="space-y-2">
+            {selectedProducts.map((item) => {
+              const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
+              const isPreview = previewProductId === item.id;
+              return (
+                <li
+                  key={item.id}
+                  className={`flex items-center gap-2 rounded-lg border p-2.5 transition-colors ${
+                    isPreview
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card hover:border-primary/30"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setPreviewProductId(item.id)}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.category} · {lineUnit} RON/buc · {quantity} buc.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSelectedProduct(item.id)}
+                    className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    aria-label={`Elimină ${item.name}`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-xs text-muted-foreground">
+            Apasă pe un produs pentru a-l evidenția. Mockup-ul de mai jos este disponibil pentru fiecare produs selectat.
+          </p>
         </Card>
       )}
 
@@ -521,10 +596,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                 <p className="font-medium text-foreground">{FINISH_LABELS[key].label}</p>
                 <p className="text-xs text-muted-foreground">{FINISH_LABELS[key].description}</p>
               </div>
-              {product && (
+              {previewProduct && (
                 <span className="text-sm font-semibold text-foreground">
-                  {(product.basePrice * FINISH_MULTIPLIERS[key]).toFixed(2)} RON/buc
+                  {(previewProduct.basePrice * FINISH_MULTIPLIERS[key]).toFixed(2)} RON/buc
                 </span>
+              )}
+              {!previewProduct && selectedProducts.length > 0 && (
+                <span className="text-xs text-muted-foreground">variază per produs</span>
               )}
             </label>
           ))}
@@ -542,30 +620,50 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           />
         </div>
 
-        {product && (
-          <Card className="p-4 bg-secondary/50 border-border">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{quantity} × {unitPrice} RON</span>
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="font-semibold text-foreground text-lg">Total</span>
-              <span className="font-bold text-primary text-lg">{totalPrice} RON</span>
+        {selectedProducts.length > 0 && (
+          <Card className="p-4 bg-secondary/50 border-border space-y-3">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Estimare per produs</p>
+            {selectedProducts.map((item) => {
+              const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
+              const lineTotal = +(lineUnit * quantity).toFixed(2);
+              return (
+                <div key={item.id} className="flex justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground truncate">
+                    {item.name}
+                    <span className="text-xs"> ({item.category})</span>
+                  </span>
+                  <span className="shrink-0 font-medium text-foreground">
+                    {quantity} × {lineUnit} = {lineTotal} RON
+                  </span>
+                </div>
+              );
+            })}
+            <Separator />
+            <div className="flex justify-between">
+              <span className="font-semibold text-foreground text-lg">Total general</span>
+              <span className="font-bold text-primary text-lg">{offerGrandTotal} RON</span>
             </div>
           </Card>
         )}
 
-        {/* Preview Mockup - shows ONLY after product + finish are selected */}
-        {product && (
-          <ProductMockup
-            productName={product.name}
-            productCategory={product.category}
-            customType={customType}
-            customText={customText}
-            imagePreview={imagePreview}
-            finish={finish}
-            basePrice={product.basePrice}
-            onFinishChange={setFinish}
-          />
+        {selectedProducts.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">Preview mockup — toate produsele selectate</p>
+            {selectedProducts.map((item) => (
+              <ProductMockup
+                key={item.id}
+                productName={item.name}
+                productCategory={item.category}
+                customType={customType}
+                customText={customText}
+                imagePreview={imagePreview}
+                finish={finish}
+                basePrice={item.basePrice}
+                onFinishChange={setFinish}
+                triggerLabel={`Preview mockup: ${item.name}`}
+              />
+            ))}
+          </div>
         )}
       </section>
 
