@@ -567,13 +567,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       </section>
 
       {selectedProducts.length > 0 && (
-        <Card className="p-4 bg-secondary/40 border-border space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Card className="p-4 bg-secondary/40 border-border space-y-3 overflow-hidden">
+          <div className="space-y-3">
             <p className="text-sm font-semibold text-foreground">
               Produse selectate ({selectedProducts.length})
             </p>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
                 <Label htmlFor="bulk-quantity" className="text-xs text-muted-foreground whitespace-nowrap">
                   Cant. la toate:
                 </Label>
@@ -583,26 +583,28 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                   min={1}
                   value={bulkQuantity}
                   onChange={(e) => setBulkQuantity(e.target.value)}
-                  className="h-8 w-24"
+                  className="h-8 w-20"
                 />
                 <Button type="button" variant="secondary" size="sm" onClick={applyBulkQuantity}>
                   Aplică
                 </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">Finisaj la toate:</span>
+              <div className="flex flex-wrap items-center gap-2 min-w-0 sm:col-span-1 lg:col-span-1">
+                <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">Finisaj la toate:</span>
                 <ProductFinishPicker value={bulkFinish} onChange={setBulkFinish} compact />
-                <Button type="button" variant="secondary" size="sm" onClick={applyBulkFinish}>
+                <Button type="button" variant="secondary" size="sm" onClick={applyBulkFinish} className="shrink-0">
                   Aplică
                 </Button>
               </div>
-              <button
-                type="button"
-                onClick={clearSelectedProducts}
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-              >
-                Șterge toate
-              </button>
+              <div className="flex items-center sm:justify-end">
+                <button
+                  type="button"
+                  onClick={clearSelectedProducts}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Șterge toate
+                </button>
+              </div>
             </div>
           </div>
           <ul className="space-y-2">
@@ -614,52 +616,54 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               return (
                 <li
                   key={item.id}
-                  className={`flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border p-2.5 transition-colors ${
+                  className={`rounded-lg border p-3 overflow-hidden transition-colors ${
                     isPreview
                       ? "border-primary bg-primary/5"
                       : "border-border bg-card hover:border-primary/30"
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setPreviewProductId(item.id)}
-                    className="flex-1 min-w-0 text-left"
-                  >
-                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.category} · {lineUnit} RON/buc · {FINISH_LABELS[itemFinish].label}
-                    </p>
-                  </button>
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <ProductFinishPicker
-                      value={itemFinish}
-                      onChange={(f) => setProductFinish(item.id, f)}
-                      compact
-                    />
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor={`qty-${item.id}`} className="sr-only">
-                        Cantitate {item.name}
-                      </Label>
-                      <Input
-                        id={`qty-${item.id}`}
-                        type="number"
-                        min={1}
-                        value={qty}
-                        onChange={(e) =>
-                          setProductQuantity(item.id, Math.max(1, parseInt(e.target.value, 10) || 1))
-                        }
-                        className="h-8 w-20 text-center"
-                      />
-                      <span className="text-xs text-muted-foreground">buc.</span>
-                    </div>
+                  <div className="grid grid-cols-1 gap-3 min-w-0 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                     <button
                       type="button"
-                      onClick={() => removeSelectedProduct(item.id)}
-                      className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                      aria-label={`Elimină ${item.name}`}
+                      onClick={() => setPreviewProductId(item.id)}
+                      className="min-w-0 text-left"
                     >
-                      <X className="w-4 h-4" />
+                      <p className="text-sm font-medium text-foreground break-words">{item.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {item.category} · {lineUnit} RON/buc · {FINISH_LABELS[itemFinish].label}
+                      </p>
                     </button>
+                    <div className="flex flex-col gap-2 min-w-0 w-full sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
+                      <ProductFinishPicker
+                        value={itemFinish}
+                        onChange={(f) => setProductFinish(item.id, f)}
+                        compact
+                      />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Label htmlFor={`qty-${item.id}`} className="sr-only">
+                          Cantitate {item.name}
+                        </Label>
+                        <Input
+                          id={`qty-${item.id}`}
+                          type="number"
+                          min={1}
+                          value={qty}
+                          onChange={(e) =>
+                            setProductQuantity(item.id, Math.max(1, parseInt(e.target.value, 10) || 1))
+                          }
+                          className="h-8 w-20 text-center"
+                        />
+                        <span className="text-xs text-muted-foreground">buc.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeSelectedProduct(item.id)}
+                        className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        aria-label={`Elimină ${item.name}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
