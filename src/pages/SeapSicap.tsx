@@ -109,19 +109,19 @@ export default function SeapSicap() {
               className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 hover:border-primary/40 transition-colors"
             >
               <Mail className="w-5 h-5 text-primary shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">E-mail licitații</p>
-                <p className="font-semibold text-foreground">{company.tendersEmail}</p>
+                <p className="font-semibold text-foreground break-all">{company.tendersEmail}</p>
               </div>
             </a>
             <a
-              href={`tel:+${siteConfig.phoneDigits}`}
+              href={`tel:+${company.officePhoneDigits}`}
               className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 hover:border-primary/40 transition-colors"
             >
               <Phone className="w-5 h-5 text-primary shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Telefon</p>
-                <p className="font-semibold text-foreground">{siteConfig.phoneDisplay}</p>
+                <p className="font-semibold text-foreground break-all">{company.officePhoneDisplay}</p>
               </div>
             </a>
             <a
@@ -129,9 +129,9 @@ export default function SeapSicap() {
               className="flex items-center gap-3 rounded-xl border border-border bg-card p-5 hover:border-primary/40 transition-colors sm:col-span-2"
             >
               <Mail className="w-5 h-5 text-primary shrink-0" />
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">E-mail general</p>
-                <p className="font-semibold text-foreground">{siteConfig.email}</p>
+                <p className="font-semibold text-foreground break-all">{siteConfig.email}</p>
               </div>
             </a>
           </div>

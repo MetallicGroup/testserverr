@@ -20,7 +20,7 @@ export const siteConfig = {
     country: "România",
     eLicitationUrl: "https://www.e-licitatie.ro",
     eLicitationRole: "Ofertant",
-    tendersEmail: "office@avozenevo.ro",
+    tendersEmail: "sicap@avozenevo.ro",
     officePhoneDisplay: "0784 998 866",
     officePhoneDigits: "40784998866",
     description:
