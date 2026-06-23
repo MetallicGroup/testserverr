@@ -8,7 +8,7 @@ interface ProductFinishPickerProps {
 
 export default function ProductFinishPicker({ value, onChange, compact }: ProductFinishPickerProps) {
   return (
-    <div className={`flex flex-wrap gap-1 max-w-full ${compact ? "" : ""}`}>
+    <div className="flex flex-wrap gap-1 max-w-full w-full">
       {FINISH_ORDER.map((key) => {
         const meta = FINISH_META[key];
         const selected = value === key;
