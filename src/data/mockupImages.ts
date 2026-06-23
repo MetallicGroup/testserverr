@@ -85,7 +85,7 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Calendare de birou": "notebook",
   "Calendare de perete": "banner",
   "Mousepad-uri": "mousepad",
-  "Suporturi de pixuri": "mug",
+  "Suporturi de pixuri": "box",
   "Clipboard-uri": "notebook",
   "Dosare cu logo": "notebook",
   "Plicuri personalizate": "paper",
@@ -134,7 +134,7 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Powerbank-uri personalizate": "powerbank",
   "Carcase telefon": "phonecase",
   "Căști personalizate": "generic",
-  "Suporturi de telefon": "generic",
+  "Suporturi de telefon": "phonecase",
   "Cabluri de încărcare cu logo": "generic",
   "Boxe bluetooth personalizate": "generic",
   "Webcam cover personalizat": "badge",
@@ -148,17 +148,17 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Cordoane pentru ecuson": "lanyard",
   "Portcard-uri personalizate": "wallet",
   "Brățări personalizate": "generic",
-  "Oglinzi de buzunar": "badge",
+  "Oglinzi de buzunar": "generic",
   "Brichete personalizate": "generic",
   "Ochelari de soare cu logo": "generic",
 
   // Outdoor
   "Umbrele personalizate": "umbrella",
-  "Pelerine de ploaie": "hoodie",
+  "Pelerine de ploaie": "umbrella",
   "Pături personalizate": "generic",
   "Saltele gonflabile cu logo": "generic",
-  "Mingi personalizate": "badge",
-  "Frisbee-uri personalizate": "badge",
+  "Mingi personalizate": "generic",
+  "Frisbee-uri personalizate": "generic",
   "Genți sport personalizate": "backpack",
   "Sticle sport": "bottle",
 
@@ -166,7 +166,7 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Odorizante auto personalizate": "generic",
   "Suporturi auto pentru telefon": "generic",
   "Parasolare auto cu logo": "generic",
-  "Scrumiere personalizate": "mug",
+  "Scrumiere personalizate": "generic",
   "Încărcătoare auto cu logo": "generic",
 
   // Sănătate
@@ -177,11 +177,11 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Kit-uri de igienă personalizate": "box",
 
   // Casă
-  "Farfurii personalizate": "badge",
-  "Tocătoare personalizate": "generic",
+  "Farfurii personalizate": "generic",
+  "Tocătoare personalizate": "box",
   "Magneti de frigider": "badge",
   "Lumânări personalizate": "generic",
-  "Ceasuri de perete cu logo": "badge",
+  "Ceasuri de perete cu logo": "generic",
   "Perne personalizate": "generic",
 
   // Marketing

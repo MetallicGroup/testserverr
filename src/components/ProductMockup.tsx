@@ -1,13 +1,15 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Download } from "lucide-react";
+import { Eye, Download, ExternalLink } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { toast } from "sonner";
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
-import { FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
+import { openProductMockupPreview } from "@/lib/openProductMockupPreview";
+import { FINISH_IMAGE_STYLES, FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
 
 interface ProductMockupProps {
   productName: string;
@@ -45,6 +47,7 @@ function MockupCard({
   onSelect: (finish: Finish) => void;
 }) {
   const meta = FINISH_META[finishKey];
+  const visual = FINISH_IMAGE_STYLES[finishKey];
   const price = (basePrice * FINISH_MULTIPLIERS[finishKey]).toFixed(2);
 
   const getFontSize = () => {
@@ -61,8 +64,8 @@ function MockupCard({
       type="button"
       onClick={() => onSelect(finishKey)}
       className={`flex-1 rounded-xl border-2 transition-all p-3 text-left ${
-      isSelected ? "border-primary shadow-lg bg-white" : "border-border/50 bg-white/80 opacity-75"
-    }`}
+        isSelected ? "border-primary shadow-lg bg-white" : "border-border/50 bg-white/80 opacity-90"
+      }`}
     >
       <div className="flex items-center justify-between mb-2">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.badge}`}>
@@ -77,8 +80,13 @@ function MockupCard({
         <img
           src={mockupImage}
           alt={`${productName} - ${meta.label}`}
-          className="w-full h-auto object-contain"
+          className="w-full h-auto object-contain transition-all duration-300"
+          style={{ filter: visual.filter }}
           crossOrigin="anonymous"
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: visual.overlay }}
         />
         <div
           className="absolute flex items-center justify-center overflow-hidden"
@@ -90,17 +98,19 @@ function MockupCard({
           }}
         >
           {customType === "text" ? (
-            <p style={{
-              color: "#1a1a2e",
-              fontWeight: 700,
-              fontSize: getFontSize(),
-              textAlign: "center",
-              wordBreak: "break-word",
-              lineHeight: 1.2,
-              maxWidth: "100%",
-              padding: "1px",
-              textShadow: "0 0 2px rgba(255,255,255,0.8)",
-            }}>
+            <p
+              style={{
+                color: "#1a1a2e",
+                fontWeight: 700,
+                fontSize: getFontSize(),
+                textAlign: "center",
+                wordBreak: "break-word",
+                lineHeight: 1.2,
+                maxWidth: "100%",
+                padding: "1px",
+                textShadow: "0 0 2px rgba(255,255,255,0.8)",
+              }}
+            >
               {displayText}
             </p>
           ) : (
@@ -141,10 +151,30 @@ export default function ProductMockup({
   triggerLabel,
 }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
+  const [openingTab, setOpeningTab] = useState(false);
   const mockup = getMockupForProduct(productName, productCategory);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
+
+  const handleOpenInNewTab = useCallback(async () => {
+    setOpeningTab(true);
+    try {
+      await openProductMockupPreview(
+        productName,
+        productCategory,
+        customType,
+        customText,
+        imagePreview,
+        finish,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Previzualizarea nu a putut fi deschisă.";
+      toast.error(message);
+    } finally {
+      setOpeningTab(false);
+    }
+  }, [productName, productCategory, customType, customText, imagePreview, finish]);
 
   const handleDownloadPDF = useCallback(async () => {
     try {
@@ -189,52 +219,70 @@ export default function ProductMockup({
   }, [productName, productCategory, customType, customText, imagePreview]);
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="gap-2 w-full">
-          <Eye className="w-4 h-4" />
-          {triggerLabel ?? "Compară finisaje & Preview mockup"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Comparație finisaje: {productName}</DialogTitle>
-        </DialogHeader>
+    <div className="flex flex-col sm:flex-row gap-2">
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" className="gap-2 w-full sm:flex-1">
+            <Eye className="w-4 h-4" />
+            {triggerLabel ?? "Compară finisaje & Preview mockup"}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Comparație finisaje: {productName}</DialogTitle>
+          </DialogHeader>
 
-        <div ref={mockupRef} className="bg-white p-4 sm:p-6">
-          <p className="text-center text-xs text-gray-400 uppercase tracking-widest mb-4">
-            {productName} — Comparație calitate finisaj
-          </p>
+          <div ref={mockupRef} className="bg-white p-4 sm:p-6">
+            <p className="text-center text-xs text-gray-400 uppercase tracking-widest mb-4">
+              {productName} — Comparație calitate finisaj
+            </p>
 
-          {/* 3-column comparison */}
-          <div className="flex gap-3 sm:gap-4">
-            {(["low", "medium", "high"] as Finish[]).map((key) => (
-              <MockupCard
-                key={key}
-                productName={productName}
-                mockupImage={mockup.image}
-                printArea={mockup.printArea}
-                customType={customType}
-                displayText={displayText}
-                displayImage={displayImage}
-                finishKey={key}
-                basePrice={basePrice}
-                isSelected={finish === key}
-                onSelect={onFinishChange}
-              />
-            ))}
+            <div className="flex gap-3 sm:gap-4">
+              {(["low", "medium", "high"] as Finish[]).map((key) => (
+                <MockupCard
+                  key={key}
+                  productName={productName}
+                  mockupImage={mockup.image}
+                  printArea={mockup.printArea}
+                  customType={customType}
+                  displayText={displayText}
+                  displayImage={displayImage}
+                  finishKey={key}
+                  basePrice={basePrice}
+                  isSelected={finish === key}
+                  onSelect={onFinishChange}
+                />
+              ))}
+            </div>
+
+            <p className="text-center text-[9px] text-gray-300 uppercase tracking-widest mt-4">
+              avozenevo mockup previzualizare
+            </p>
           </div>
 
-          <p className="text-center text-[9px] text-gray-300 uppercase tracking-widest mt-4">
-            avozenevo mockup previzualizare
-          </p>
-        </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={handleOpenInNewTab} disabled={openingTab} className="gap-2 flex-1">
+              <ExternalLink className="w-4 h-4" />
+              {openingTab ? "Se deschide..." : "Deschide în filă nouă"}
+            </Button>
+            <Button type="button" onClick={handleDownloadPDF} className="gap-2 flex-1">
+              <Download className="w-4 h-4" />
+              Descarcă mockup PDF
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        <Button onClick={handleDownloadPDF} className="w-full gap-2">
-          <Download className="w-4 h-4" />
-          Descarcă mockup PDF
-        </Button>
-      </DialogContent>
-    </Dialog>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={handleOpenInNewTab}
+        disabled={openingTab}
+        className="gap-2 w-full sm:w-auto sm:shrink-0"
+      >
+        <ExternalLink className="w-4 h-4" />
+        Filă nouă
+      </Button>
+    </div>
   );
 }

@@ -130,7 +130,7 @@ function buildSummaryPage(input: OfferPdfInput, generatedAt: Date): HTMLElement 
       <div style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);border-radius:12px;padding:18px;color:#fff;">
         <p style="margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.85;">Total estimat</p>
         <p style="margin:0;font-size:32px;font-weight:800;">${formatMoney(input.grandTotal)}</p>
-        <p style="margin:10px 0 0;font-size:11px;opacity:0.9;">${input.lineItems.length} produs(e) · Cantitate per produs: ${input.lineItems[0]?.quantity ?? "—"} buc.</p>
+        <p style="margin:10px 0 0;font-size:11px;opacity:0.9;">${input.lineItems.length} produs(e) · cantități individualizate</p>
       </div>
     </div>
 

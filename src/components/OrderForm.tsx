@@ -19,7 +19,7 @@ import TurnstileWidget from "@/components/TurnstileWidget";
 import { siteConfig, storageKeys } from "@/config/siteConfig";
 import { getProductsFromStore } from "@/lib/productStore";
 import { generateOfferPdf } from "@/lib/generateOfferPdf";
-import { FINISH_LABELS, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
+import { FINISH_LABELS, FINISH_MULTIPLIERS, DEFAULT_PRODUCT_QUANTITY, type Finish } from "@/lib/finishOptions";
 
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
   medical: <Heart className="w-5 h-5" />,
@@ -69,7 +69,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [finish, setFinish] = useState<Finish>("low");
-  const [quantity, setQuantity] = useState<number>(100);
+  const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
+  const [bulkQuantity, setBulkQuantity] = useState<string>(String(DEFAULT_PRODUCT_QUANTITY));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -90,10 +91,36 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     if (preselectedProductId) {
       setPreviewProductId(preselectedProductId);
       setSelectedProductIds([preselectedProductId]);
+      setProductQuantities({ [preselectedProductId]: DEFAULT_PRODUCT_QUANTITY });
       const p = products.find((pr) => pr.id === preselectedProductId);
       if (p) setSelectedCategory(p.category);
     }
   }, [preselectedProductId, products]);
+
+  const getProductQuantity = useCallback(
+    (productId: string) => productQuantities[productId] ?? DEFAULT_PRODUCT_QUANTITY,
+    [productQuantities],
+  );
+
+  const setProductQuantity = useCallback((productId: string, quantity: number) => {
+    setProductQuantities((prev) => ({
+      ...prev,
+      [productId]: Math.max(1, quantity),
+    }));
+  }, []);
+
+  const applyBulkQuantity = useCallback(() => {
+    const parsed = Math.max(1, parseInt(bulkQuantity, 10) || DEFAULT_PRODUCT_QUANTITY);
+    setProductQuantities((prev) => {
+      const next = { ...prev };
+      selectedProductIds.forEach((id) => {
+        next[id] = parsed;
+      });
+      return next;
+    });
+    setBulkQuantity(String(parsed));
+    toast.success(`Cantitatea ${parsed} buc. a fost aplicată la toate produsele.`);
+  }, [bulkQuantity, selectedProductIds]);
 
   const toggleProductSelection = useCallback((productId: string) => {
     setSelectedProductIds((prev) => {
@@ -102,9 +129,17 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         setPreviewProductId((current) =>
           current === productId ? (next[next.length - 1] ?? "") : current,
         );
+        setProductQuantities((quantities) => {
+          const { [productId]: _, ...rest } = quantities;
+          return rest;
+        });
         return next;
       }
       setPreviewProductId(productId);
+      setProductQuantities((quantities) => ({
+        ...quantities,
+        [productId]: quantities[productId] ?? DEFAULT_PRODUCT_QUANTITY,
+      }));
       return [...prev, productId];
     });
   }, []);
@@ -115,6 +150,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       setPreviewProductId((current) =>
         current === productId ? (next[next.length - 1] ?? "") : current,
       );
+      setProductQuantities((quantities) => {
+        const { [productId]: _, ...rest } = quantities;
+        return rest;
+      });
       return next;
     });
   }, []);
@@ -122,6 +161,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const clearSelectedProducts = useCallback(() => {
     setSelectedProductIds([]);
     setPreviewProductId("");
+    setProductQuantities({});
   }, []);
 
   // Get products filtered by domain first, then by category
@@ -158,16 +198,17 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const offerLineItems = useMemo(
     () =>
       selectedProducts.map((item) => {
+        const qty = getProductQuantity(item.id);
         const unit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
         return {
           name: item.name,
           category: item.category,
-          quantity,
+          quantity: qty,
           unitPrice: unit,
-          totalPrice: +(unit * quantity).toFixed(2),
+          totalPrice: +(unit * qty).toFixed(2),
         };
       }),
-    [selectedProducts, finish, quantity],
+    [selectedProducts, finish, getProductQuantity],
   );
 
   const offerGrandTotal = useMemo(
@@ -243,12 +284,11 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     ];
 
     if (hasProductDetails) {
-      lines.push(
-        `Produse: ${selectedProducts.map((item) => item.name).join(", ")}`,
-        `Finisaj: ${FINISH_LABELS[finish].label}`,
-        `Cantitate: ${quantity} buc / produs`,
-        `Total estimat: ${offerGrandTotal} RON`,
-      );
+      lines.push(`Finisaj: ${FINISH_LABELS[finish].label}`);
+      selectedProducts.forEach((item) => {
+        lines.push(`- ${item.name}: ${getProductQuantity(item.id)} buc.`);
+      });
+      lines.push(`Total estimat: ${offerGrandTotal} RON`);
       if (customType === "text" && customText.trim()) {
         lines.push(`Personalizare text: ${customText}`);
       } else if (customType === "image" && imageFile) {
@@ -277,9 +317,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       products: selectedProducts.map((item) => ({
         id: item.id,
         name: item.name,
+        quantity: getProductQuantity(item.id),
         unitPrice: +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2),
       })),
-      quantity,
       finish,
       customType,
       customText,
@@ -344,7 +384,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                 <p><span className="font-semibold text-foreground">Personalizare:</span> {customType === "text" ? customText : imageFile?.name}</p>
               )}
               <p><span className="font-semibold text-foreground">Finisaj:</span> {FINISH_LABELS[finish].label}</p>
-              <p><span className="font-semibold text-foreground">Cantitate:</span> {quantity} buc. / produs</p>
+              <ul className="list-disc pl-5 space-y-1">
+                {selectedProducts.map((item) => (
+                  <li key={item.id}>
+                    {item.name}: {getProductQuantity(item.id)} buc.
+                  </li>
+                ))}
+              </ul>
               <p className="text-lg font-bold text-foreground">Total estimat: {offerGrandTotal} RON</p>
             </>
           )}
@@ -474,20 +520,37 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       {selectedProducts.length > 0 && (
         <Card className="p-4 bg-secondary/40 border-border space-y-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm font-semibold text-foreground">
               Produse selectate ({selectedProducts.length})
             </p>
-            <button
-              type="button"
-              onClick={clearSelectedProducts}
-              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-            >
-              Șterge toate
-            </button>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="bulk-quantity" className="text-xs text-muted-foreground whitespace-nowrap">
+                Aplică la toate:
+              </Label>
+              <Input
+                id="bulk-quantity"
+                type="number"
+                min={1}
+                value={bulkQuantity}
+                onChange={(e) => setBulkQuantity(e.target.value)}
+                className="h-8 w-24"
+              />
+              <Button type="button" variant="secondary" size="sm" onClick={applyBulkQuantity}>
+                Aplică
+              </Button>
+              <button
+                type="button"
+                onClick={clearSelectedProducts}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors ml-1"
+              >
+                Șterge toate
+              </button>
+            </div>
           </div>
           <ul className="space-y-2">
             {selectedProducts.map((item) => {
+              const qty = getProductQuantity(item.id);
               const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
               const isPreview = previewProductId === item.id;
               return (
@@ -506,9 +569,25 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                   >
                     <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.category} · {lineUnit} RON/buc · {quantity} buc.
+                      {item.category} · {lineUnit} RON/buc
                     </p>
                   </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Label htmlFor={`qty-${item.id}`} className="sr-only">
+                      Cantitate {item.name}
+                    </Label>
+                    <Input
+                      id={`qty-${item.id}`}
+                      type="number"
+                      min={1}
+                      value={qty}
+                      onChange={(e) =>
+                        setProductQuantity(item.id, Math.max(1, parseInt(e.target.value, 10) || 1))
+                      }
+                      className="h-8 w-20 text-center"
+                    />
+                    <span className="text-xs text-muted-foreground">buc.</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeSelectedProduct(item.id)}
@@ -522,7 +601,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             })}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Apasă pe un produs pentru a-l evidenția. Mockup-ul de mai jos este disponibil pentru fiecare produs selectat.
+            Setează cantitatea separat pentru fiecare produs. Apasă pe numele produsului pentru a-l evidenția.
           </p>
         </Card>
       )}
@@ -580,7 +659,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary" />
-          <span>4. Finisaj și cantitate <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+          <span>4. Finisaj <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         <RadioGroup value={finish} onValueChange={(v) => setFinish(v as Finish)} className="grid gap-3">
@@ -608,24 +687,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           ))}
         </RadioGroup>
 
-        <div>
-          <Label htmlFor="quantity">Cantitate</Label>
-          <Input
-            id="quantity"
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-            className="mt-1 max-w-[180px]"
-          />
-        </div>
-
         {selectedProducts.length > 0 && (
           <Card className="p-4 bg-secondary/50 border-border space-y-3">
             <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Estimare per produs</p>
             {selectedProducts.map((item) => {
               const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
-              const lineTotal = +(lineUnit * quantity).toFixed(2);
+              const qty = getProductQuantity(item.id);
+              const lineTotal = +(lineUnit * qty).toFixed(2);
               return (
                 <div key={item.id} className="flex justify-between gap-3 text-sm">
                   <span className="text-muted-foreground truncate">
@@ -633,7 +701,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                     <span className="text-xs"> ({item.category})</span>
                   </span>
                   <span className="shrink-0 font-medium text-foreground">
-                    {quantity} × {lineUnit} = {lineTotal} RON
+                    {qty} × {lineUnit} = {lineTotal} RON
                   </span>
                 </div>
               );

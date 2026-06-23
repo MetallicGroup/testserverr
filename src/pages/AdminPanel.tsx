@@ -12,8 +12,8 @@ interface SavedOrder {
   name: string;
   email: string;
   phone: string;
-  products: Array<{ id: string; name: string; unitPrice: number }>;
-  quantity: number;
+  products: Array<{ id: string; name: string; unitPrice: number; quantity?: number }>;
+  quantity?: number;
   finish: string;
   customType: string;
   customText: string;
@@ -120,8 +120,17 @@ export default function AdminPanel() {
                 <div key={`${order.createdAt}-${idx}`} className="rounded-lg border border-border p-4 space-y-1 text-sm">
                   <p><span className="font-semibold">Data:</span> {new Date(order.createdAt).toLocaleString("ro-RO")}</p>
                   <p><span className="font-semibold">Client:</span> {order.name} ({order.phone}, {order.email})</p>
-                  <p><span className="font-semibold">Produse:</span> {order.products.map((item) => item.name).join(", ")}</p>
-                  <p><span className="font-semibold">Cantitate:</span> {order.quantity}</p>
+                  <p>
+                    <span className="font-semibold">Produse:</span>{" "}
+                    {order.products
+                      .map((item) =>
+                        item.quantity != null ? `${item.name} (${item.quantity} buc.)` : item.name,
+                      )
+                      .join(", ")}
+                  </p>
+                  {order.quantity != null && order.products.every((item) => item.quantity == null) && (
+                    <p><span className="font-semibold">Cantitate:</span> {order.quantity}</p>
+                  )}
                   <p><span className="font-semibold">Finisaj:</span> {order.finish}</p>
                   {order.imageFileName && <p><span className="font-semibold">Fisier:</span> {order.imageFileName}</p>}
                   {order.message && <p><span className="font-semibold">Mesaj:</span> {order.message}</p>}
