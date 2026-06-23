@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 import businessDomains from "@/data/businessDomains";
 import ProductMockup from "@/components/ProductMockup";
+import ProductFinishPicker from "@/components/ProductFinishPicker";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { siteConfig, storageKeys } from "@/config/siteConfig";
 import { getProductsFromStore } from "@/lib/productStore";
 import { generateOfferPdf } from "@/lib/generateOfferPdf";
-import { FINISH_LABELS, FINISH_MULTIPLIERS, DEFAULT_PRODUCT_QUANTITY, type Finish } from "@/lib/finishOptions";
+import { FINISH_LABELS, FINISH_MULTIPLIERS, DEFAULT_PRODUCT_QUANTITY, DEFAULT_FINISH, type Finish } from "@/lib/finishOptions";
 
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
   medical: <Heart className="w-5 h-5" />,
@@ -68,7 +69,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [customText, setCustomText] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [finish, setFinish] = useState<Finish>("low");
+  const [productFinishes, setProductFinishes] = useState<Record<string, Finish>>({});
+  const [bulkFinish, setBulkFinish] = useState<Finish>(DEFAULT_FINISH);
   const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
   const [bulkQuantity, setBulkQuantity] = useState<string>(String(DEFAULT_PRODUCT_QUANTITY));
   const [name, setName] = useState("");
@@ -92,6 +94,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       setPreviewProductId(preselectedProductId);
       setSelectedProductIds([preselectedProductId]);
       setProductQuantities({ [preselectedProductId]: DEFAULT_PRODUCT_QUANTITY });
+      setProductFinishes({ [preselectedProductId]: DEFAULT_FINISH });
       const p = products.find((pr) => pr.id === preselectedProductId);
       if (p) setSelectedCategory(p.category);
     }
@@ -108,6 +111,26 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       [productId]: Math.max(1, quantity),
     }));
   }, []);
+
+  const getProductFinish = useCallback(
+    (productId: string) => productFinishes[productId] ?? DEFAULT_FINISH,
+    [productFinishes],
+  );
+
+  const setProductFinish = useCallback((productId: string, finish: Finish) => {
+    setProductFinishes((prev) => ({ ...prev, [productId]: finish }));
+  }, []);
+
+  const applyBulkFinish = useCallback(() => {
+    setProductFinishes((prev) => {
+      const next = { ...prev };
+      selectedProductIds.forEach((id) => {
+        next[id] = bulkFinish;
+      });
+      return next;
+    });
+    toast.success(`Finisajul ${FINISH_LABELS[bulkFinish].label} a fost aplicat la toate produsele.`);
+  }, [bulkFinish, selectedProductIds]);
 
   const applyBulkQuantity = useCallback(() => {
     const parsed = Math.max(1, parseInt(bulkQuantity, 10) || DEFAULT_PRODUCT_QUANTITY);
@@ -130,7 +153,11 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           current === productId ? (next[next.length - 1] ?? "") : current,
         );
         setProductQuantities((quantities) => {
-          const { [productId]: _, ...rest } = quantities;
+          const { [productId]: _q, ...rest } = quantities;
+          return rest;
+        });
+        setProductFinishes((finishes) => {
+          const { [productId]: _f, ...rest } = finishes;
           return rest;
         });
         return next;
@@ -139,6 +166,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       setProductQuantities((quantities) => ({
         ...quantities,
         [productId]: quantities[productId] ?? DEFAULT_PRODUCT_QUANTITY,
+      }));
+      setProductFinishes((finishes) => ({
+        ...finishes,
+        [productId]: finishes[productId] ?? DEFAULT_FINISH,
       }));
       return [...prev, productId];
     });
@@ -151,7 +182,11 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         current === productId ? (next[next.length - 1] ?? "") : current,
       );
       setProductQuantities((quantities) => {
-        const { [productId]: _, ...rest } = quantities;
+        const { [productId]: _q, ...rest } = quantities;
+        return rest;
+      });
+      setProductFinishes((finishes) => {
+        const { [productId]: _f, ...rest } = finishes;
         return rest;
       });
       return next;
@@ -162,6 +197,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     setSelectedProductIds([]);
     setPreviewProductId("");
     setProductQuantities({});
+    setProductFinishes({});
   }, []);
 
   // Get products filtered by domain first, then by category
@@ -186,10 +222,6 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     return list;
   }, [domainProductIds, selectedCategory, searchTerm, products]);
 
-  const previewProduct = useMemo(
-    () => products.find((p) => p.id === previewProductId),
-    [products, previewProductId],
-  );
   const selectedProducts = useMemo(
     () => products.filter((p) => selectedProductIds.includes(p.id)),
     [products, selectedProductIds],
@@ -199,17 +231,26 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     () =>
       selectedProducts.map((item) => {
         const qty = getProductQuantity(item.id);
-        const unit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
+        const itemFinish = getProductFinish(item.id);
+        const unit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
         return {
           name: item.name,
           category: item.category,
           quantity: qty,
           unitPrice: unit,
           totalPrice: +(unit * qty).toFixed(2),
+          finishLabel: FINISH_LABELS[itemFinish].label,
+          finish: itemFinish,
         };
       }),
-    [selectedProducts, finish, getProductQuantity],
+    [selectedProducts, getProductQuantity, getProductFinish],
   );
+
+  const offerFinishSummary = useMemo(() => {
+    const labels = new Set(offerLineItems.map((item) => item.finishLabel));
+    if (labels.size === 1) return offerLineItems[0]?.finishLabel ?? "Basic";
+    return "Mixt (per produs)";
+  }, [offerLineItems]);
 
   const offerGrandTotal = useMemo(
     () => +offerLineItems.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2),
@@ -222,14 +263,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       clientEmail: email.trim(),
       clientPhone: phone.trim(),
       clientMessage: message.trim() || undefined,
-      finishLabel: FINISH_LABELS[finish].label,
+      finishLabel: offerFinishSummary,
       customType,
       customText,
       imagePreview,
       lineItems: offerLineItems,
       grandTotal: offerGrandTotal,
     }),
-    [name, email, phone, message, finish, customType, customText, imagePreview, offerLineItems, offerGrandTotal],
+    [name, email, phone, message, offerFinishSummary, customType, customText, imagePreview, offerLineItems, offerGrandTotal],
   );
 
   const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,9 +325,11 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     ];
 
     if (hasProductDetails) {
-      lines.push(`Finisaj: ${FINISH_LABELS[finish].label}`);
       selectedProducts.forEach((item) => {
-        lines.push(`- ${item.name}: ${getProductQuantity(item.id)} buc.`);
+        const itemFinish = getProductFinish(item.id);
+        lines.push(
+          `- ${item.name}: ${getProductQuantity(item.id)} buc., ${FINISH_LABELS[itemFinish].label}`,
+        );
       });
       lines.push(`Total estimat: ${offerGrandTotal} RON`);
       if (customType === "text" && customText.trim()) {
@@ -314,13 +357,16 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       name,
       email,
       phone,
-      products: selectedProducts.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: getProductQuantity(item.id),
-        unitPrice: +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2),
-      })),
-      finish,
+      products: selectedProducts.map((item) => {
+        const itemFinish = getProductFinish(item.id);
+        return {
+          id: item.id,
+          name: item.name,
+          quantity: getProductQuantity(item.id),
+          finish: itemFinish,
+          unitPrice: +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2),
+        };
+      }),
       customType,
       customText,
       imageFileName: imageFile?.name || "",
@@ -383,13 +429,15 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               {(customType === "text" ? customText : imageFile?.name) && (
                 <p><span className="font-semibold text-foreground">Personalizare:</span> {customType === "text" ? customText : imageFile?.name}</p>
               )}
-              <p><span className="font-semibold text-foreground">Finisaj:</span> {FINISH_LABELS[finish].label}</p>
               <ul className="list-disc pl-5 space-y-1">
-                {selectedProducts.map((item) => (
-                  <li key={item.id}>
-                    {item.name}: {getProductQuantity(item.id)} buc.
-                  </li>
-                ))}
+                {selectedProducts.map((item) => {
+                  const itemFinish = getProductFinish(item.id);
+                  return (
+                    <li key={item.id}>
+                      {item.name}: {getProductQuantity(item.id)} buc., {FINISH_LABELS[itemFinish].label}
+                    </li>
+                  );
+                })}
               </ul>
               <p className="text-lg font-bold text-foreground">Total estimat: {offerGrandTotal} RON</p>
             </>
@@ -524,25 +572,34 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             <p className="text-sm font-semibold text-foreground">
               Produse selectate ({selectedProducts.length})
             </p>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="bulk-quantity" className="text-xs text-muted-foreground whitespace-nowrap">
-                Aplică la toate:
-              </Label>
-              <Input
-                id="bulk-quantity"
-                type="number"
-                min={1}
-                value={bulkQuantity}
-                onChange={(e) => setBulkQuantity(e.target.value)}
-                className="h-8 w-24"
-              />
-              <Button type="button" variant="secondary" size="sm" onClick={applyBulkQuantity}>
-                Aplică
-              </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="bulk-quantity" className="text-xs text-muted-foreground whitespace-nowrap">
+                  Cant. la toate:
+                </Label>
+                <Input
+                  id="bulk-quantity"
+                  type="number"
+                  min={1}
+                  value={bulkQuantity}
+                  onChange={(e) => setBulkQuantity(e.target.value)}
+                  className="h-8 w-24"
+                />
+                <Button type="button" variant="secondary" size="sm" onClick={applyBulkQuantity}>
+                  Aplică
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Finisaj la toate:</span>
+                <ProductFinishPicker value={bulkFinish} onChange={setBulkFinish} compact />
+                <Button type="button" variant="secondary" size="sm" onClick={applyBulkFinish}>
+                  Aplică
+                </Button>
+              </div>
               <button
                 type="button"
                 onClick={clearSelectedProducts}
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors ml-1"
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
               >
                 Șterge toate
               </button>
@@ -551,12 +608,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           <ul className="space-y-2">
             {selectedProducts.map((item) => {
               const qty = getProductQuantity(item.id);
-              const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
+              const itemFinish = getProductFinish(item.id);
+              const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
               const isPreview = previewProductId === item.id;
               return (
                 <li
                   key={item.id}
-                  className={`flex items-center gap-2 rounded-lg border p-2.5 transition-colors ${
+                  className={`flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border p-2.5 transition-colors ${
                     isPreview
                       ? "border-primary bg-primary/5"
                       : "border-border bg-card hover:border-primary/30"
@@ -569,39 +627,46 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                   >
                     <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.category} · {lineUnit} RON/buc
+                      {item.category} · {lineUnit} RON/buc · {FINISH_LABELS[itemFinish].label}
                     </p>
                   </button>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Label htmlFor={`qty-${item.id}`} className="sr-only">
-                      Cantitate {item.name}
-                    </Label>
-                    <Input
-                      id={`qty-${item.id}`}
-                      type="number"
-                      min={1}
-                      value={qty}
-                      onChange={(e) =>
-                        setProductQuantity(item.id, Math.max(1, parseInt(e.target.value, 10) || 1))
-                      }
-                      className="h-8 w-20 text-center"
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <ProductFinishPicker
+                      value={itemFinish}
+                      onChange={(f) => setProductFinish(item.id, f)}
+                      compact
                     />
-                    <span className="text-xs text-muted-foreground">buc.</span>
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor={`qty-${item.id}`} className="sr-only">
+                        Cantitate {item.name}
+                      </Label>
+                      <Input
+                        id={`qty-${item.id}`}
+                        type="number"
+                        min={1}
+                        value={qty}
+                        onChange={(e) =>
+                          setProductQuantity(item.id, Math.max(1, parseInt(e.target.value, 10) || 1))
+                        }
+                        className="h-8 w-20 text-center"
+                      />
+                      <span className="text-xs text-muted-foreground">buc.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSelectedProduct(item.id)}
+                      className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      aria-label={`Elimină ${item.name}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeSelectedProduct(item.id)}
-                    className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                    aria-label={`Elimină ${item.name}`}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </li>
               );
             })}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Setează cantitatea separat pentru fiecare produs. Apasă pe numele produsului pentru a-l evidenția.
+            Setează cantitatea și finisajul separat pentru fiecare produs (ex: pix Basic, cană Standard, carte Premium).
           </p>
         </Card>
       )}
@@ -655,50 +720,30 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       <Separator />
 
-      {/* STEP 3: Finish & Quantity */}
+      {/* STEP 4: Pricing & mockup */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary" />
-          <span>4. Finisaj <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+          <span>4. Estimare & preview <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
-        <RadioGroup value={finish} onValueChange={(v) => setFinish(v as Finish)} className="grid gap-3">
-          {(Object.keys(FINISH_LABELS) as Finish[]).map((key) => (
-            <label
-              key={key}
-              className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${
-                finish === key ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-card hover:border-primary/30"
-              }`}
-            >
-              <RadioGroupItem value={key} id={`finish-${key}`} />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">{FINISH_LABELS[key].label}</p>
-                <p className="text-xs text-muted-foreground">{FINISH_LABELS[key].description}</p>
-              </div>
-              {previewProduct && (
-                <span className="text-sm font-semibold text-foreground">
-                  {(previewProduct.basePrice * FINISH_MULTIPLIERS[key]).toFixed(2)} RON/buc
-                </span>
-              )}
-              {!previewProduct && selectedProducts.length > 0 && (
-                <span className="text-xs text-muted-foreground">variază per produs</span>
-              )}
-            </label>
-          ))}
-        </RadioGroup>
+        <p className="text-sm text-muted-foreground">
+          Finisajul se alege per produs în lista de mai sus. Poți folosi „Finisaj la toate” pentru a aplica același nivel la toate produsele.
+        </p>
 
         {selectedProducts.length > 0 && (
           <Card className="p-4 bg-secondary/50 border-border space-y-3">
             <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Estimare per produs</p>
             {selectedProducts.map((item) => {
-              const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[finish]).toFixed(2);
+              const itemFinish = getProductFinish(item.id);
+              const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
               const qty = getProductQuantity(item.id);
               const lineTotal = +(lineUnit * qty).toFixed(2);
               return (
                 <div key={item.id} className="flex justify-between gap-3 text-sm">
                   <span className="text-muted-foreground truncate">
                     {item.name}
-                    <span className="text-xs"> ({item.category})</span>
+                    <span className="text-xs"> ({item.category}) · {FINISH_LABELS[itemFinish].label}</span>
                   </span>
                   <span className="shrink-0 font-medium text-foreground">
                     {qty} × {lineUnit} = {lineTotal} RON
@@ -725,9 +770,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                 customType={customType}
                 customText={customText}
                 imagePreview={imagePreview}
-                finish={finish}
+                finish={getProductFinish(item.id)}
                 basePrice={item.basePrice}
-                onFinishChange={setFinish}
+                onFinishChange={(f) => setProductFinish(item.id, f)}
                 triggerLabel={`Preview mockup: ${item.name}`}
               />
             ))}

@@ -15,6 +15,7 @@ export async function openProductMockupPreview(
     customType,
     customText,
     imagePreview,
+    finish,
   );
 
   const previewWindow = window.open("", "_blank", "noopener,noreferrer");

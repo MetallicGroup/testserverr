@@ -1,4 +1,5 @@
 // Mockup image imports
+import type { Finish } from "@/lib/finishOptions";
 import penImg from "@/assets/mockups/pen.png";
 import mugImg from "@/assets/mockups/mug.png";
 import tshirtImg from "@/assets/mockups/tshirt.png";
@@ -24,37 +25,47 @@ import boxImg from "@/assets/mockups/box.png";
 import genericImg from "@/assets/mockups/generic.png";
 import thermosImg from "@/assets/mockups/thermos.png";
 
+function finishImages(key: string): Partial<Record<Finish, string>> {
+  return {
+    low: new URL(`../assets/mockups/finish/${key}-low.png`, import.meta.url).href,
+    medium: new URL(`../assets/mockups/finish/${key}-medium.png`, import.meta.url).href,
+    high: new URL(`../assets/mockups/finish/${key}-high.png`, import.meta.url).href,
+  };
+}
+
 export interface MockupConfig {
   image: string;
+  /** Optional dedicated image per finish tier (when available on disk) */
+  imagesByFinish?: Partial<Record<Finish, string>>;
   /** Print area as CSS percentages relative to the image container */
   printArea: { top: string; left: string; width: string; height: string };
 }
 
 export const MOCKUP_IMAGES: Record<string, MockupConfig> = {
-  pen:       { image: penImg,       printArea: { top: "38%", left: "35%", width: "30%", height: "22%" } },
-  mug:       { image: mugImg,       printArea: { top: "30%", left: "15%", width: "45%", height: "35%" } },
-  tshirt:    { image: tshirtImg,    printArea: { top: "32%", left: "30%", width: "40%", height: "28%" } },
-  hoodie:    { image: hoodieImg,    printArea: { top: "30%", left: "32%", width: "36%", height: "22%" } },
-  cap:       { image: capImg,       printArea: { top: "22%", left: "28%", width: "44%", height: "28%" } },
-  totebag:   { image: totebagImg,   printArea: { top: "35%", left: "22%", width: "56%", height: "35%" } },
-  bottle:    { image: bottleImg,    printArea: { top: "35%", left: "25%", width: "50%", height: "25%" } },
-  thermos:   { image: thermosImg,   printArea: { top: "32%", left: "25%", width: "50%", height: "28%" } },
-  notebook:  { image: notebookImg,  printArea: { top: "20%", left: "22%", width: "58%", height: "40%" } },
-  usb:       { image: usbImg,      printArea: { top: "22%", left: "30%", width: "40%", height: "25%" } },
-  phonecase: { image: phonecaseImg, printArea: { top: "25%", left: "20%", width: "60%", height: "40%" } },
-  umbrella:  { image: umbrellaImg,  printArea: { top: "12%", left: "25%", width: "50%", height: "30%" } },
-  keychain:  { image: keychainImg,  printArea: { top: "38%", left: "22%", width: "56%", height: "32%" } },
-  banner:    { image: bannerImg,    printArea: { top: "15%", left: "28%", width: "44%", height: "55%" } },
-  backpack:  { image: backpackImg,  printArea: { top: "18%", left: "28%", width: "44%", height: "25%" } },
-  powerbank: { image: powerbankImg, printArea: { top: "28%", left: "22%", width: "56%", height: "30%" } },
-  mousepad:  { image: mousepadImg,  printArea: { top: "18%", left: "12%", width: "76%", height: "60%" } },
-  wallet:    { image: walletImg,    printArea: { top: "25%", left: "18%", width: "64%", height: "45%" } },
-  lanyard:   { image: lanyardImg,   printArea: { top: "15%", left: "32%", width: "36%", height: "25%" } },
-  badge:     { image: badgeImg,     printArea: { top: "20%", left: "20%", width: "60%", height: "60%" } },
-  polo:      { image: poloImg,      printArea: { top: "35%", left: "32%", width: "36%", height: "25%" } },
-  paper:     { image: paperImg,     printArea: { top: "55%", left: "10%", width: "35%", height: "20%" } },
-  box:       { image: boxImg,       printArea: { top: "35%", left: "18%", width: "50%", height: "30%" } },
-  generic:   { image: genericImg,   printArea: { top: "25%", left: "18%", width: "64%", height: "45%" } },
+  pen:       { image: penImg,       imagesByFinish: finishImages("pen"),       printArea: { top: "38%", left: "35%", width: "30%", height: "22%" } },
+  mug:       { image: mugImg,       imagesByFinish: finishImages("mug"),       printArea: { top: "30%", left: "15%", width: "45%", height: "35%" } },
+  tshirt:    { image: tshirtImg,    imagesByFinish: finishImages("tshirt"),    printArea: { top: "32%", left: "30%", width: "40%", height: "28%" } },
+  hoodie:    { image: hoodieImg,    imagesByFinish: finishImages("hoodie"),    printArea: { top: "30%", left: "32%", width: "36%", height: "22%" } },
+  cap:       { image: capImg,       imagesByFinish: finishImages("cap"),       printArea: { top: "22%", left: "28%", width: "44%", height: "28%" } },
+  totebag:   { image: totebagImg,   imagesByFinish: finishImages("totebag"),   printArea: { top: "35%", left: "22%", width: "56%", height: "35%" } },
+  bottle:    { image: bottleImg,    imagesByFinish: finishImages("bottle"),    printArea: { top: "35%", left: "25%", width: "50%", height: "25%" } },
+  thermos:   { image: thermosImg,   imagesByFinish: finishImages("thermos"),   printArea: { top: "32%", left: "25%", width: "50%", height: "28%" } },
+  notebook:  { image: notebookImg,  imagesByFinish: finishImages("notebook"),  printArea: { top: "20%", left: "22%", width: "58%", height: "40%" } },
+  usb:       { image: usbImg,       imagesByFinish: finishImages("usb"),       printArea: { top: "22%", left: "30%", width: "40%", height: "25%" } },
+  phonecase: { image: phonecaseImg, imagesByFinish: finishImages("phonecase"), printArea: { top: "25%", left: "20%", width: "60%", height: "40%" } },
+  umbrella:  { image: umbrellaImg,  imagesByFinish: finishImages("umbrella"),  printArea: { top: "12%", left: "25%", width: "50%", height: "30%" } },
+  keychain:  { image: keychainImg,  imagesByFinish: finishImages("keychain"),  printArea: { top: "38%", left: "22%", width: "56%", height: "32%" } },
+  banner:    { image: bannerImg,    imagesByFinish: finishImages("banner"),    printArea: { top: "15%", left: "28%", width: "44%", height: "55%" } },
+  backpack:  { image: backpackImg,  imagesByFinish: finishImages("backpack"),  printArea: { top: "18%", left: "28%", width: "44%", height: "25%" } },
+  powerbank: { image: powerbankImg, imagesByFinish: finishImages("powerbank"), printArea: { top: "28%", left: "22%", width: "56%", height: "30%" } },
+  mousepad:  { image: mousepadImg,  imagesByFinish: finishImages("mousepad"),  printArea: { top: "18%", left: "12%", width: "76%", height: "60%" } },
+  wallet:    { image: walletImg,    imagesByFinish: finishImages("wallet"),    printArea: { top: "25%", left: "18%", width: "64%", height: "45%" } },
+  lanyard:   { image: lanyardImg,   imagesByFinish: finishImages("lanyard"),   printArea: { top: "15%", left: "32%", width: "36%", height: "25%" } },
+  badge:     { image: badgeImg,     imagesByFinish: finishImages("badge"),     printArea: { top: "20%", left: "20%", width: "60%", height: "60%" } },
+  polo:      { image: poloImg,      imagesByFinish: finishImages("polo"),      printArea: { top: "35%", left: "32%", width: "36%", height: "25%" } },
+  paper:     { image: paperImg,     imagesByFinish: finishImages("paper"),     printArea: { top: "55%", left: "10%", width: "35%", height: "20%" } },
+  box:       { image: boxImg,       imagesByFinish: finishImages("box"),       printArea: { top: "35%", left: "18%", width: "50%", height: "30%" } },
+  generic:   { image: genericImg,   imagesByFinish: finishImages("generic"),   printArea: { top: "25%", left: "18%", width: "64%", height: "45%" } },
 };
 
 /* ─── Map each product category to a default mockup ─── */
@@ -200,9 +211,20 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Jocuri de cărți personalizate": "paper",
 };
 
-export function getMockupForProduct(name: string, category: string): MockupConfig {
+export type ResolvedMockupConfig = MockupConfig & { usesDedicatedFinishImage?: boolean };
+
+export function getMockupForProduct(name: string, category: string, finish?: Finish): ResolvedMockupConfig {
   const overrideKey = PRODUCT_MOCKUP_OVERRIDES[name];
-  if (overrideKey && MOCKUP_IMAGES[overrideKey]) return MOCKUP_IMAGES[overrideKey];
-  const catKey = CATEGORY_TO_MOCKUP[category] || "generic";
-  return MOCKUP_IMAGES[catKey] || MOCKUP_IMAGES.generic;
+  const baseKey = overrideKey && MOCKUP_IMAGES[overrideKey]
+    ? overrideKey
+    : CATEGORY_TO_MOCKUP[category] || "generic";
+  const config = MOCKUP_IMAGES[baseKey] || MOCKUP_IMAGES.generic;
+  if (finish && config.imagesByFinish?.[finish]) {
+    return {
+      ...config,
+      image: config.imagesByFinish[finish]!,
+      usesDedicatedFinishImage: true,
+    };
+  }
+  return { ...config, usesDedicatedFinishImage: false };
 }

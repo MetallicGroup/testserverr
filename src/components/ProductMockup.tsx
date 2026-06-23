@@ -34,6 +34,7 @@ function MockupCard({
   basePrice,
   isSelected,
   onSelect,
+  usesDedicatedFinishImage,
 }: {
   productName: string;
   mockupImage: string;
@@ -45,6 +46,7 @@ function MockupCard({
   basePrice: number;
   isSelected: boolean;
   onSelect: (finish: Finish) => void;
+  usesDedicatedFinishImage?: boolean;
 }) {
   const meta = FINISH_META[finishKey];
   const visual = FINISH_IMAGE_STYLES[finishKey];
@@ -81,13 +83,15 @@ function MockupCard({
           src={mockupImage}
           alt={`${productName} - ${meta.label}`}
           className="w-full h-auto object-contain transition-all duration-300"
-          style={{ filter: visual.filter }}
+          style={{ filter: usesDedicatedFinishImage ? "none" : visual.filter }}
           crossOrigin="anonymous"
         />
+        {!usesDedicatedFinishImage && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: visual.overlay }}
         />
+        )}
         <div
           className="absolute flex items-center justify-center overflow-hidden"
           style={{
@@ -152,7 +156,7 @@ export default function ProductMockup({
 }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
   const [openingTab, setOpeningTab] = useState(false);
-  const mockup = getMockupForProduct(productName, productCategory);
+  const mockup = getMockupForProduct(productName, productCategory, finish);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
@@ -184,6 +188,7 @@ export default function ProductMockup({
         customType,
         customText,
         imagePreview,
+        finish,
       );
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pdfW = pdf.internal.pageSize.getWidth();
@@ -216,7 +221,7 @@ export default function ProductMockup({
       pdf.addImage(imgData, "PNG", (pdfW - w) / 2, (pdfH - h) / 2, w, h);
       pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
     }
-  }, [productName, productCategory, customType, customText, imagePreview]);
+  }, [productName, productCategory, customType, customText, imagePreview, finish]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-2">
@@ -238,12 +243,14 @@ export default function ProductMockup({
             </p>
 
             <div className="flex gap-3 sm:gap-4">
-              {(["low", "medium", "high"] as Finish[]).map((key) => (
-                <MockupCard
-                  key={key}
-                  productName={productName}
-                  mockupImage={mockup.image}
-                  printArea={mockup.printArea}
+              {(["low", "medium", "high"] as Finish[]).map((key) => {
+                const tierMockup = getMockupForProduct(productName, productCategory, key);
+                return (
+              <MockupCard
+                key={key}
+                productName={productName}
+                mockupImage={tierMockup.image}
+                printArea={tierMockup.printArea}
                   customType={customType}
                   displayText={displayText}
                   displayImage={displayImage}
@@ -251,8 +258,10 @@ export default function ProductMockup({
                   basePrice={basePrice}
                   isSelected={finish === key}
                   onSelect={onFinishChange}
+                  usesDedicatedFinishImage={tierMockup.usesDedicatedFinishImage}
                 />
-              ))}
+                );
+              })}
             </div>
 
             <p className="text-center text-[9px] text-gray-300 uppercase tracking-widest mt-4">

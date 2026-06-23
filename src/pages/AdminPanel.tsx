@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { storageKeys, siteConfig } from "@/config/siteConfig";
+import { FINISH_LABELS, type Finish } from "@/lib/finishOptions";
 import { getProductsFromStore, saveProductsToStore, type EditableProduct } from "@/lib/productStore";
 
 interface SavedOrder {
@@ -12,9 +12,9 @@ interface SavedOrder {
   name: string;
   email: string;
   phone: string;
-  products: Array<{ id: string; name: string; unitPrice: number; quantity?: number }>;
+  products: Array<{ id: string; name: string; unitPrice: number; quantity?: number; finish?: string }>;
   quantity?: number;
-  finish: string;
+  finish?: string;
   customType: string;
   customText: string;
   imageFileName: string;
@@ -123,15 +123,23 @@ export default function AdminPanel() {
                   <p>
                     <span className="font-semibold">Produse:</span>{" "}
                     {order.products
-                      .map((item) =>
-                        item.quantity != null ? `${item.name} (${item.quantity} buc.)` : item.name,
-                      )
-                      .join(", ")}
+                      .map((item) => {
+                        const qty = item.quantity != null ? `${item.quantity} buc.` : "";
+                        const finishLabel =
+                          item.finish && item.finish in FINISH_LABELS
+                            ? FINISH_LABELS[item.finish as Finish].label
+                            : item.finish;
+                        const parts = [item.name, qty, finishLabel].filter(Boolean);
+                        return parts.join(" · ");
+                      })
+                      .join("; ")}
                   </p>
                   {order.quantity != null && order.products.every((item) => item.quantity == null) && (
                     <p><span className="font-semibold">Cantitate:</span> {order.quantity}</p>
                   )}
-                  <p><span className="font-semibold">Finisaj:</span> {order.finish}</p>
+                  {order.finish && order.products.every((item) => !item.finish) && (
+                    <p><span className="font-semibold">Finisaj:</span> {order.finish}</p>
+                  )}
                   {order.imageFileName && <p><span className="font-semibold">Fisier:</span> {order.imageFileName}</p>}
                   {order.message && <p><span className="font-semibold">Mesaj:</span> {order.message}</p>}
                 </div>

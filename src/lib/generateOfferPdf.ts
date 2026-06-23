@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { siteConfig } from "@/config/siteConfig";
 import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
+import type { Finish } from "@/lib/finishOptions";
 
 export interface OfferLineItem {
   name: string;
@@ -10,6 +11,8 @@ export interface OfferLineItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  finishLabel: string;
+  finish: Finish;
 }
 
 export interface OfferPdfInput {
@@ -17,7 +20,7 @@ export interface OfferPdfInput {
   clientEmail: string;
   clientPhone: string;
   clientMessage?: string;
-  finishLabel: string;
+  finishLabel?: string;
   customType: "text" | "image";
   customText: string;
   imagePreview: string | null;
@@ -94,6 +97,7 @@ function buildSummaryPage(input: OfferPdfInput, generatedAt: Date): HTMLElement 
       <tr>
         <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">${escapeHtml(item.name)}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#64748b;">${escapeHtml(item.category)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;">${escapeHtml(item.finishLabel)}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;">${item.quantity}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatMoney(item.unitPrice)}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700;">${formatMoney(item.totalPrice)}</td>
@@ -115,7 +119,7 @@ function buildSummaryPage(input: OfferPdfInput, generatedAt: Date): HTMLElement 
       </div>
       <div style="text-align:right;font-size:12px;color:#64748b;">
         <div><strong>Data:</strong> ${escapeHtml(formatDateRo(generatedAt))}</div>
-        <div><strong>Finisaj:</strong> ${escapeHtml(input.finishLabel)}</div>
+        <div><strong>Finisaj:</strong> ${escapeHtml(input.finishLabel || "Per produs")}</div>
       </div>
     </div>
 
@@ -130,7 +134,7 @@ function buildSummaryPage(input: OfferPdfInput, generatedAt: Date): HTMLElement 
       <div style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);border-radius:12px;padding:18px;color:#fff;">
         <p style="margin:0 0 8px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.85;">Total estimat</p>
         <p style="margin:0;font-size:32px;font-weight:800;">${formatMoney(input.grandTotal)}</p>
-        <p style="margin:10px 0 0;font-size:11px;opacity:0.9;">${input.lineItems.length} produs(e) · cantități individualizate</p>
+        <p style="margin:10px 0 0;font-size:11px;opacity:0.9;">${input.lineItems.length} produs(e) · cantități și finisaje individualizate</p>
       </div>
     </div>
 
@@ -139,6 +143,7 @@ function buildSummaryPage(input: OfferPdfInput, generatedAt: Date): HTMLElement 
         <tr style="background:#eff6ff;">
           <th style="padding:10px 12px;text-align:left;color:#1e40af;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Produs</th>
           <th style="padding:10px 12px;text-align:left;color:#1e40af;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Categorie</th>
+          <th style="padding:10px 12px;text-align:center;color:#1e40af;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Finisaj</th>
           <th style="padding:10px 12px;text-align:center;color:#1e40af;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Cant.</th>
           <th style="padding:10px 12px;text-align:right;color:#1e40af;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Preț/buc</th>
           <th style="padding:10px 12px;text-align:right;color:#1e40af;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Total</th>
@@ -147,7 +152,7 @@ function buildSummaryPage(input: OfferPdfInput, generatedAt: Date): HTMLElement 
       <tbody>${rows}</tbody>
       <tfoot>
         <tr>
-          <td colspan="4" style="padding:14px 12px;text-align:right;font-weight:700;font-size:13px;">Total general</td>
+          <td colspan="5" style="padding:14px 12px;text-align:right;font-weight:700;font-size:13px;">Total general</td>
           <td style="padding:14px 12px;text-align:right;font-weight:800;font-size:15px;color:#2563eb;">${formatMoney(input.grandTotal)}</td>
         </tr>
       </tfoot>
@@ -175,7 +180,7 @@ function buildProductPage(
         Previzualizare produs · ${pageIndex} / ${totalPages}
       </p>
       <h2 style="margin:6px 0 4px;font-size:24px;font-weight:800;">${escapeHtml(item.name)}</h2>
-      <p style="margin:0;font-size:13px;color:#64748b;">${escapeHtml(item.category)} · Finisaj: ${escapeHtml(input.finishLabel)}</p>
+      <p style="margin:0;font-size:13px;color:#64748b;">${escapeHtml(item.category)} · Finisaj: ${escapeHtml(item.finishLabel)}</p>
     </div>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:24px;text-align:center;margin-bottom:24px;">
@@ -248,6 +253,7 @@ export async function generateOfferPdf(input: OfferPdfInput): Promise<void> {
         input.customType,
         input.customText,
         input.imagePreview,
+        item.finish,
       ),
     ),
   );

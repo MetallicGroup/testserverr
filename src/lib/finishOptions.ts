@@ -35,3 +35,30 @@ export const FINISH_IMAGE_STYLES: Record<Finish, { filter: string; overlay: stri
 };
 
 export const DEFAULT_PRODUCT_QUANTITY = 100;
+export const DEFAULT_FINISH: Finish = "low";
+export const FINISH_ORDER: Finish[] = ["low", "medium", "high"];
+
+/** Canvas overlay applied after drawing the base product image */
+export const FINISH_CANVAS_EFFECTS: Record<
+  Finish,
+  { overlay: string; saturation: number; brightness: number; contrast: number }
+> = {
+  low: {
+    overlay: "rgba(100, 116, 139, 0.18)",
+    saturation: 0.65,
+    brightness: 0.9,
+    contrast: 0.92,
+  },
+  medium: {
+    overlay: "transparent",
+    saturation: 1,
+    brightness: 1,
+    contrast: 1,
+  },
+  high: {
+    overlay: "rgba(124, 58, 237, 0.1)",
+    saturation: 1.18,
+    brightness: 1.04,
+    contrast: 1.08,
+  },
+};
