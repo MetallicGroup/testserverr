@@ -65,20 +65,20 @@ function MockupCard({
     <button
       type="button"
       onClick={() => onSelect(finishKey)}
-      className={`flex-1 rounded-xl border-2 transition-all p-3 text-left ${
+      className={`w-full min-w-0 rounded-xl border-2 transition-all p-2.5 sm:p-3 text-left ${
         isSelected ? "border-primary shadow-lg bg-white" : "border-border/50 bg-white/80 opacity-90"
       }`}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.badge}`}>
           {meta.label}
         </span>
-        <span className="text-sm font-bold" style={{ color: meta.color }}>
+        <span className="text-xs sm:text-sm font-bold shrink-0" style={{ color: meta.color }}>
           {price} RON
         </span>
       </div>
 
-      <div className="relative mx-auto" style={{ maxWidth: 180 }}>
+      <div className="relative mx-auto w-full max-w-[180px]">
         <img
           src={mockupImage}
           alt={`${productName} - ${meta.label}`}
@@ -227,57 +227,61 @@ export default function ProductMockup({
     <div className="flex flex-col sm:flex-row gap-2">
       <Dialog>
         <DialogTrigger asChild>
-          <Button type="button" variant="outline" className="gap-2 w-full sm:flex-1">
+          <Button type="button" variant="outline" className="gap-2 w-full sm:flex-1 h-auto py-2.5 whitespace-normal text-left justify-start">
             <Eye className="w-4 h-4" />
             {triggerLabel ?? "Compară finisaje & Preview mockup"}
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Comparație finisaje: {productName}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden">
+          <div className="overflow-y-auto max-h-[90dvh] p-4 sm:p-6">
+            <DialogHeader className="pr-2">
+              <DialogTitle className="text-base sm:text-lg text-left">
+                Comparație finisaje: {productName}
+              </DialogTitle>
+            </DialogHeader>
 
-          <div ref={mockupRef} className="bg-white p-4 sm:p-6">
-            <p className="text-center text-xs text-gray-400 uppercase tracking-widest mb-4">
-              {productName} — Comparație calitate finisaj
-            </p>
+            <div ref={mockupRef} className="bg-white p-3 sm:p-4 mt-4 rounded-lg min-w-0 overflow-hidden">
+              <p className="text-center text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide mb-4 break-words px-1">
+                {productName} — Comparație calitate finisaj
+              </p>
 
-            <div className="flex gap-3 sm:gap-4">
-              {(["low", "medium", "high"] as Finish[]).map((key) => {
-                const tierMockup = getMockupForProduct(productName, productCategory, key);
-                return (
-              <MockupCard
-                key={key}
-                productName={productName}
-                mockupImage={tierMockup.image}
-                printArea={tierMockup.printArea}
-                  customType={customType}
-                  displayText={displayText}
-                  displayImage={displayImage}
-                  finishKey={key}
-                  basePrice={basePrice}
-                  isSelected={finish === key}
-                  onSelect={onFinishChange}
-                  usesDedicatedFinishImage={tierMockup.usesDedicatedFinishImage}
-                />
-                );
-              })}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
+                {(["low", "medium", "high"] as Finish[]).map((key) => {
+                  const tierMockup = getMockupForProduct(productName, productCategory, key);
+                  return (
+                    <MockupCard
+                      key={key}
+                      productName={productName}
+                      mockupImage={tierMockup.image}
+                      printArea={tierMockup.printArea}
+                      customType={customType}
+                      displayText={displayText}
+                      displayImage={displayImage}
+                      finishKey={key}
+                      basePrice={basePrice}
+                      isSelected={finish === key}
+                      onSelect={onFinishChange}
+                      usesDedicatedFinishImage={tierMockup.usesDedicatedFinishImage}
+                    />
+                  );
+                })}
+              </div>
+
+              <p className="text-center text-[9px] text-gray-300 uppercase tracking-wide mt-4 break-words">
+                avozenevo mockup previzualizare
+              </p>
             </div>
 
-            <p className="text-center text-[9px] text-gray-300 uppercase tracking-widest mt-4">
-              avozenevo mockup previzualizare
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button type="button" variant="outline" onClick={handleOpenInNewTab} disabled={openingTab} className="gap-2 flex-1">
-              <ExternalLink className="w-4 h-4" />
-              {openingTab ? "Se deschide..." : "Deschide în filă nouă"}
-            </Button>
-            <Button type="button" onClick={handleDownloadPDF} className="gap-2 flex-1">
-              <Download className="w-4 h-4" />
-              Descarcă mockup PDF
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 mt-4">
+              <Button type="button" variant="outline" onClick={handleOpenInNewTab} disabled={openingTab} className="gap-2 flex-1">
+                <ExternalLink className="w-4 h-4 shrink-0" />
+                {openingTab ? "Se deschide..." : "Deschide în filă nouă"}
+              </Button>
+              <Button type="button" onClick={handleDownloadPDF} className="gap-2 flex-1">
+                <Download className="w-4 h-4 shrink-0" />
+                Descarcă mockup PDF
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

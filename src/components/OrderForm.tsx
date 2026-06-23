@@ -452,7 +452,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 min-w-0 overflow-hidden">
       <Card className="p-4 bg-primary/5 border-primary/20">
         <p className="text-sm text-muted-foreground">
           Pașii 1–4 sunt <span className="font-semibold text-foreground">opționali</span> — poți configura produsele și prețul estimat,
@@ -462,9 +462,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       {/* STEP 0: Business Domain */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
-          <Building2 className="w-5 h-5 text-primary" />
-          <span>1. Alege domeniul de activitate <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+        <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
+          <Building2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <span className="min-w-0 break-words">1. Alege domeniul de activitate <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -498,9 +498,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       {/* STEP 1: Product Selection */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
-          <Package className="w-5 h-5 text-primary" />
-          <span>2. Alege unul sau mai multe produse <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+        <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
+          <Package className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <span className="min-w-0 break-words">2. Alege unul sau mai multe produse <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         {selectedCategory && (
@@ -694,9 +694,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       {/* STEP 2: Customization */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
-          <Paintbrush className="w-5 h-5 text-primary" />
-          <span>3. Personalizare <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+        <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
+          <Paintbrush className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <span className="min-w-0 break-words">3. Personalizare <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         <RadioGroup value={customType} onValueChange={(v) => setCustomType(v as "text" | "image")} className="flex gap-6">
@@ -741,9 +741,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       {/* STEP 4: Pricing & mockup */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
-          <Package className="w-5 h-5 text-primary" />
-          <span>4. Estimare & preview <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+        <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
+          <Package className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <span className="min-w-0 break-words">4. Estimare & preview <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         <p className="text-sm text-muted-foreground">
@@ -759,8 +759,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               const qty = getProductQuantity(item.id);
               const lineTotal = +(lineUnit * qty).toFixed(2);
               return (
-                <div key={item.id} className="flex justify-between gap-3 text-sm">
-                  <span className="text-muted-foreground truncate">
+                <div key={item.id} className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-3 text-sm min-w-0">
+                  <span className="text-muted-foreground break-words min-w-0">
                     {item.name}
                     <span className="text-xs"> ({item.category}) · {FINISH_LABELS[itemFinish].label}</span>
                   </span>
@@ -803,9 +803,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
       {/* STEP 4: Contact */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 text-foreground font-semibold text-lg">
-          <User className="w-5 h-5 text-primary" />
-          <span>5. Date de contact <span className="text-sm font-normal text-muted-foreground">(obligatoriu)</span></span>
+        <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
+          <User className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <span className="min-w-0 break-words">5. Date de contact <span className="text-sm font-normal text-muted-foreground">(obligatoriu)</span></span>
         </div>
 
         <div className="grid gap-4">
