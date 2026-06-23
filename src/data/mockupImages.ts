@@ -50,7 +50,7 @@ export const MOCKUP_IMAGES: Record<string, MockupConfig> = {
   totebag:   { image: totebagImg,   imagesByFinish: finishImages("totebag"),   printArea: { top: "35%", left: "22%", width: "56%", height: "35%" } },
   bottle:    { image: bottleImg,    imagesByFinish: finishImages("bottle"),    printArea: { top: "35%", left: "25%", width: "50%", height: "25%" } },
   thermos:   { image: thermosImg,   imagesByFinish: finishImages("thermos"),   printArea: { top: "32%", left: "25%", width: "50%", height: "28%" } },
-  notebook:  { image: notebookImg,  imagesByFinish: finishImages("notebook"),  printArea: { top: "20%", left: "22%", width: "58%", height: "40%" } },
+  notebook:  { image: notebookImg,  imagesByFinish: finishImages("notebook"),  printArea: { top: "30%", left: "28%", width: "44%", height: "30%" } },
   usb:       { image: usbImg,       imagesByFinish: finishImages("usb"),       printArea: { top: "22%", left: "30%", width: "40%", height: "25%" } },
   phonecase: { image: phonecaseImg, imagesByFinish: finishImages("phonecase"), printArea: { top: "25%", left: "20%", width: "60%", height: "40%" } },
   umbrella:  { image: umbrellaImg,  imagesByFinish: finishImages("umbrella"),  printArea: { top: "12%", left: "25%", width: "50%", height: "30%" } },
@@ -211,7 +211,10 @@ export const PRODUCT_MOCKUP_OVERRIDES: Record<string, string> = {
   "Jocuri de cărți personalizate": "paper",
 };
 
-export type ResolvedMockupConfig = MockupConfig & { usesDedicatedFinishImage?: boolean };
+export type ResolvedMockupConfig = MockupConfig & {
+  mockupKey: string;
+  usesDedicatedFinishImage?: boolean;
+};
 
 export function getMockupForProduct(name: string, category: string, finish?: Finish): ResolvedMockupConfig {
   const overrideKey = PRODUCT_MOCKUP_OVERRIDES[name];
@@ -222,9 +225,10 @@ export function getMockupForProduct(name: string, category: string, finish?: Fin
   if (finish && config.imagesByFinish?.[finish]) {
     return {
       ...config,
+      mockupKey: baseKey,
       image: config.imagesByFinish[finish]!,
       usesDedicatedFinishImage: true,
     };
   }
-  return { ...config, usesDedicatedFinishImage: false };
+  return { ...config, mockupKey: baseKey, usesDedicatedFinishImage: false };
 }

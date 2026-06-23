@@ -1,6 +1,7 @@
 import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 import { FINISH_CANVAS_EFFECTS, type Finish } from "@/lib/finishOptions";
+import { drawMockupImage, drawMockupText } from "@/lib/mockupOverlay";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -91,28 +92,11 @@ export async function renderProductMockupCanvas(
 
   if (customType === "text") {
     const text = customText.trim() || "Avozenevo";
-    ctx.fillStyle = "#1a1a2e";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    let fontSize = Math.min(areaH * 0.55, 72);
-    ctx.font = `bold ${fontSize}px Arial, Helvetica, sans-serif`;
-    while (ctx.measureText(text).width > areaW * 0.92 && fontSize > 8) {
-      fontSize -= 1;
-      ctx.font = `bold ${fontSize}px Arial, Helvetica, sans-serif`;
-    }
-    ctx.shadowColor = "rgba(255,255,255,0.85)";
-    ctx.shadowBlur = 3;
-    ctx.fillText(text, left + areaW / 2, top + areaH / 2, areaW * 0.92);
-    ctx.shadowBlur = 0;
+    drawMockupText(ctx, text, left, top, areaW, areaH, mockup.mockupKey);
   } else {
     const overlaySrc = imagePreview || avozenevoLogo;
     const overlay = await loadImage(overlaySrc);
-    const scale = Math.min((areaW * 0.9) / overlay.width, (areaH * 0.9) / overlay.height);
-    const w = overlay.width * scale;
-    const h = overlay.height * scale;
-    ctx.globalAlpha = 0.95;
-    ctx.drawImage(overlay, left + (areaW - w) / 2, top + (areaH - h) / 2, w, h);
-    ctx.globalAlpha = 1;
+    drawMockupImage(ctx, overlay, left, top, areaW, areaH, mockup.mockupKey);
   }
 
   return canvas.toDataURL("image/png");

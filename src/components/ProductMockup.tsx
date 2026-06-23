@@ -10,6 +10,7 @@ import { getMockupForProduct } from "@/data/mockupImages";
 import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
 import { openProductMockupPreview } from "@/lib/openProductMockupPreview";
 import { FINISH_IMAGE_STYLES, FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
+import { getOverlayPerspective, OVERLAY_IMAGE_STYLE, OVERLAY_TEXT_STYLE } from "@/lib/mockupOverlay";
 
 interface ProductMockupProps {
   productName: string;
@@ -34,10 +35,12 @@ function MockupCard({
   basePrice,
   isSelected,
   onSelect,
+  mockupKey,
   usesDedicatedFinishImage,
 }: {
   productName: string;
   mockupImage: string;
+  mockupKey: string;
   printArea: { top: string; left: string; width: string; height: string };
   customType: "text" | "image";
   displayText: string;
@@ -51,6 +54,7 @@ function MockupCard({
   const meta = FINISH_META[finishKey];
   const visual = FINISH_IMAGE_STYLES[finishKey];
   const price = (basePrice * FINISH_MULTIPLIERS[finishKey]).toFixed(2);
+  const perspective = getOverlayPerspective(mockupKey);
 
   const getFontSize = () => {
     const len = displayText.length;
@@ -78,7 +82,7 @@ function MockupCard({
         </span>
       </div>
 
-      <div className="relative mx-auto w-full max-w-[180px]">
+      <div className="relative mx-auto w-full max-w-[180px] [isolation:isolate]">
         <img
           src={mockupImage}
           alt={`${productName} - ${meta.label}`}
@@ -99,20 +103,15 @@ function MockupCard({
             left: printArea.left,
             width: printArea.width,
             height: printArea.height,
+            transform: perspective.cssTransform || undefined,
+            transformOrigin: "center center",
           }}
         >
           {customType === "text" ? (
             <p
               style={{
-                color: "#1a1a2e",
-                fontWeight: 700,
+                ...OVERLAY_TEXT_STYLE,
                 fontSize: getFontSize(),
-                textAlign: "center",
-                wordBreak: "break-word",
-                lineHeight: 1.2,
-                maxWidth: "100%",
-                padding: "1px",
-                textShadow: "0 0 2px rgba(255,255,255,0.8)",
               }}
             >
               {displayText}
@@ -122,13 +121,7 @@ function MockupCard({
               <img
                 src={displayImage}
                 alt="Custom"
-                style={{
-                  maxWidth: "90%",
-                  maxHeight: "90%",
-                  objectFit: "contain",
-                  opacity: 0.9,
-                  mixBlendMode: "multiply",
-                }}
+                style={OVERLAY_IMAGE_STYLE}
                 crossOrigin="anonymous"
               />
             )
@@ -252,6 +245,7 @@ export default function ProductMockup({
                     <MockupCard
                       key={key}
                       productName={productName}
+                      mockupKey={tierMockup.mockupKey}
                       mockupImage={tierMockup.image}
                       printArea={tierMockup.printArea}
                       customType={customType}
