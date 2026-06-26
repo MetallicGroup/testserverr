@@ -129,31 +129,6 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     [setAiMockupImage],
   );
 
-  const generateAllAiMockups = useCallback(async () => {
-    if (selectedProducts.length === 0) return;
-    setGeneratingAllAi(true);
-    let success = 0;
-    try {
-      for (const item of selectedProducts) {
-        const finish = getProductFinish(item.id);
-        try {
-          await generateAiForProduct(item.id, item.name, item.category, finish);
-          success += 1;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Eroare AI";
-          toast.error(`${item.name}: ${message}`);
-        }
-      }
-      if (success > 0) {
-        toast.success(
-          `Mockup AI generat pentru ${success} produs(e). Textul/logo-ul se aplică automat pe poză.`,
-        );
-      }
-    } finally {
-      setGeneratingAllAi(false);
-    }
-  }, [selectedProducts, getProductFinish, generateAiForProduct]);
-
   useEffect(() => {
     setProducts(getProductsFromStore().filter((p) => p.active));
   }, []);
@@ -302,6 +277,31 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     () => products.filter((p) => selectedProductIds.includes(p.id)),
     [products, selectedProductIds],
   );
+
+  const generateAllAiMockups = useCallback(async () => {
+    if (selectedProducts.length === 0) return;
+    setGeneratingAllAi(true);
+    let success = 0;
+    try {
+      for (const item of selectedProducts) {
+        const finish = getProductFinish(item.id);
+        try {
+          await generateAiForProduct(item.id, item.name, item.category, finish);
+          success += 1;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Eroare AI";
+          toast.error(`${item.name}: ${message}`);
+        }
+      }
+      if (success > 0) {
+        toast.success(
+          `Mockup AI generat pentru ${success} produs(e). Textul/logo-ul se aplică automat pe poză.`,
+        );
+      }
+    } finally {
+      setGeneratingAllAi(false);
+    }
+  }, [selectedProducts, getProductFinish, generateAiForProduct]);
 
   const offerLineItems = useMemo(
     () =>
