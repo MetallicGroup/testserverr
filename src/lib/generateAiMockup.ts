@@ -13,10 +13,31 @@ export interface GenerateAiMockupResult {
   prompt: string;
 }
 
+async function parseApiResponse(response: Response): Promise<{ error?: string; imageDataUrl?: string; prompt?: string }> {
+  const text = await response.text();
+  if (!text) {
+    throw new Error("Serverul AI nu a răspuns. Încearcă din nou.");
+  }
+  try {
+    return JSON.parse(text) as { error?: string; imageDataUrl?: string; prompt?: string };
+  } catch {
+    throw new Error(
+      response.ok
+        ? "Răspuns invalid de la serverul AI."
+        : "Serviciul AI nu este disponibil momentan. Încearcă din nou.",
+    );
+  }
+}
+
 export async function generateAiMockup(
   input: GenerateAiMockupInput,
 ): Promise<GenerateAiMockupResult> {
-  const recaptchaToken = await getRecaptchaMockupToken();
+  let recaptchaToken: string | null = null;
+  try {
+    recaptchaToken = await getRecaptchaMockupToken();
+  } catch {
+    // Continuă fără token — serverul decide dacă e obligatoriu
+  }
 
   const response = await fetch("/api/generate-mockup", {
     method: "POST",
@@ -27,7 +48,7 @@ export async function generateAiMockup(
     }),
   });
 
-  const payload = (await response.json()) as GenerateAiMockupResult & { error?: string };
+  const payload = await parseApiResponse(response);
 
   if (!response.ok) {
     throw new Error(payload.error || "Generarea AI a eșuat.");
@@ -39,6 +60,6 @@ export async function generateAiMockup(
 
   return {
     imageDataUrl: payload.imageDataUrl,
-    prompt: payload.prompt,
+    prompt: payload.prompt ?? "",
   };
 }

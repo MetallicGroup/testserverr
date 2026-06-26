@@ -171,6 +171,10 @@ export default function ProductMockup({
   );
 
   const handleGenerateAi = useCallback(async () => {
+    if (aiBaseImage) {
+      toast.info("Acest produs are deja o poză AI. Folosește mockup-ul existent sau descarcă PNG/PDF.");
+      return;
+    }
     setGeneratingAi(true);
     try {
       const result = await generateAiMockup({
@@ -187,7 +191,7 @@ export default function ProductMockup({
     } finally {
       setGeneratingAi(false);
     }
-  }, [productName, productCategory, mockup.mockupKey, finish, onAiBaseImageChange]);
+  }, [productName, productCategory, mockup.mockupKey, finish, onAiBaseImageChange, aiBaseImage]);
 
   const handleOpenInNewTab = useCallback(async () => {
     setOpeningTab(true);
@@ -329,7 +333,7 @@ export default function ProductMockup({
                 type="button"
                 variant="secondary"
                 onClick={handleGenerateAi}
-                disabled={generatingAi}
+                disabled={generatingAi || !!aiBaseImage}
                 className="gap-2 w-full"
               >
                 {generatingAi ? (
@@ -337,7 +341,11 @@ export default function ProductMockup({
                 ) : (
                   <Sparkles className="w-4 h-4 shrink-0" />
                 )}
-                {generatingAi ? "Se generează poza AI..." : "Generează poză AI pentru acest produs"}
+                {generatingAi
+                  ? "Se generează poza AI..."
+                  : aiBaseImage
+                    ? "Poză AI generată ✓"
+                    : "Generează poză AI pentru acest produs"}
               </Button>
               <p className="text-[11px] text-muted-foreground text-center px-1">
                 OpenAI creează produsul de la zero; textul sau logo-ul tău se aplică apoi precis pe suprafață.

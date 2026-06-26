@@ -13,6 +13,10 @@ declare global {
 
 let recaptchaScriptPromise: Promise<void> | null = null;
 
+function isValidRecaptchaSiteKey(siteKey: string): boolean {
+  return /^6L[\w-]{20,}$/.test(siteKey.trim());
+}
+
 function loadRecaptchaScript(siteKey: string): Promise<void> {
   if (window.grecaptcha) return Promise.resolve();
   if (recaptchaScriptPromise) return recaptchaScriptPromise;
@@ -41,22 +45,23 @@ function loadRecaptchaScript(siteKey: string): Promise<void> {
 }
 
 export async function getRecaptchaMockupToken(): Promise<string | null> {
-  const siteKey = siteConfig.recaptchaSiteKey;
-  if (!siteKey) return null;
+  const siteKey = siteConfig.recaptchaSiteKey?.trim();
+  if (!siteKey || !isValidRecaptchaSiteKey(siteKey)) return null;
 
-  await loadRecaptchaScript(siteKey);
+  try {
+    await loadRecaptchaScript(siteKey);
 
-  return new Promise((resolve, reject) => {
-    if (!window.grecaptcha) {
-      reject(new Error("reCAPTCHA nu este disponibil."));
-      return;
-    }
+    if (!window.grecaptcha) return null;
 
-    window.grecaptcha.ready(() => {
-      window.grecaptcha!
-        .execute(siteKey, { action: RECAPTCHA_MOCKUP_ACTION })
-        .then(resolve)
-        .catch(() => reject(new Error("Nu s-a putut obține tokenul reCAPTCHA.")));
+    return await new Promise<string>((resolve, reject) => {
+      window.grecaptcha!.ready(() => {
+        window.grecaptcha!
+          .execute(siteKey, { action: RECAPTCHA_MOCKUP_ACTION })
+          .then(resolve)
+          .catch(reject);
+      });
     });
-  });
+  } catch {
+    return null;
+  }
 }
