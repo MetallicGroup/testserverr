@@ -11,15 +11,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Upload, X, CheckCircle2, Package, Paintbrush, User, Send, Search, Download,
   Heart, HardHat, UtensilsCrossed, Monitor, GraduationCap, Car,
-  ShoppingBag, CalendarDays, Dumbbell, Sparkles, Scale, Wheat, Building2,
+  ShoppingBag, CalendarDays, Dumbbell, Sparkles, Scale, Wheat, Building2, Loader2,
 } from "lucide-react";
 import businessDomains from "@/data/businessDomains";
 import ProductMockup from "@/components/ProductMockup";
 import ProductFinishPicker from "@/components/ProductFinishPicker";
 import TurnstileWidget from "@/components/TurnstileWidget";
+import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig, storageKeys } from "@/config/siteConfig";
 import { getProductsFromStore } from "@/lib/productStore";
 import { generateOfferPdf } from "@/lib/generateOfferPdf";
+import { generateAiMockup } from "@/lib/generateAiMockup";
+import { getMockupForProduct } from "@/data/mockupImages";
 import { FINISH_LABELS, FINISH_MULTIPLIERS, DEFAULT_PRODUCT_QUANTITY, DEFAULT_FINISH, type Finish } from "@/lib/finishOptions";
 
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
@@ -84,6 +87,72 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [honeypot, setHoneypot] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [aiMockupImages, setAiMockupImages] = useState<Record<string, string>>({});
+  const [generatingAllAi, setGeneratingAllAi] = useState(false);
+
+  const aiMockupKey = useCallback((productId: string, finish: Finish) => `${productId}:${finish}`, []);
+
+  const getAiMockupImage = useCallback(
+    (productId: string) => {
+      const finish = productFinishes[productId] ?? DEFAULT_FINISH;
+      return aiMockupImages[aiMockupKey(productId, finish)] ?? null;
+    },
+    [aiMockupImages, aiMockupKey, productFinishes],
+  );
+
+  const setAiMockupImage = useCallback(
+    (productId: string, finish: Finish, image: string | null) => {
+      const key = aiMockupKey(productId, finish);
+      setAiMockupImages((prev) => {
+        if (!image) {
+          const { [key]: _removed, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [key]: image };
+      });
+    },
+    [aiMockupKey],
+  );
+
+  const generateAiForProduct = useCallback(
+    async (productId: string, productName: string, productCategory: string, finish: Finish) => {
+      const mockupKey = getMockupForProduct(productName, productCategory, finish).mockupKey;
+      const result = await generateAiMockup({
+        productName,
+        productCategory,
+        mockupKey,
+        finish,
+      });
+      setAiMockupImage(productId, finish, result.imageDataUrl);
+      return result;
+    },
+    [setAiMockupImage],
+  );
+
+  const generateAllAiMockups = useCallback(async () => {
+    if (selectedProducts.length === 0) return;
+    setGeneratingAllAi(true);
+    let success = 0;
+    try {
+      for (const item of selectedProducts) {
+        const finish = getProductFinish(item.id);
+        try {
+          await generateAiForProduct(item.id, item.name, item.category, finish);
+          success += 1;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Eroare AI";
+          toast.error(`${item.name}: ${message}`);
+        }
+      }
+      if (success > 0) {
+        toast.success(
+          `Mockup AI generat pentru ${success} produs(e). Textul/logo-ul se aplică automat pe poză.`,
+        );
+      }
+    } finally {
+      setGeneratingAllAi(false);
+    }
+  }, [selectedProducts, getProductFinish, generateAiForProduct]);
 
   useEffect(() => {
     setProducts(getProductsFromStore().filter((p) => p.active));
@@ -160,6 +229,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           const { [productId]: _f, ...rest } = finishes;
           return rest;
         });
+        setAiMockupImages((images) =>
+          Object.fromEntries(Object.entries(images).filter(([key]) => !key.startsWith(`${productId}:`))),
+        );
         return next;
       }
       setPreviewProductId(productId);
@@ -189,6 +261,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         const { [productId]: _f, ...rest } = finishes;
         return rest;
       });
+      setAiMockupImages((images) =>
+        Object.fromEntries(Object.entries(images).filter(([key]) => !key.startsWith(`${productId}:`))),
+      );
       return next;
     });
   }, []);
@@ -198,6 +273,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     setPreviewProductId("");
     setProductQuantities({});
     setProductFinishes({});
+    setAiMockupImages({});
   }, []);
 
   // Get products filtered by domain first, then by category
@@ -241,9 +317,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           totalPrice: +(unit * qty).toFixed(2),
           finishLabel: FINISH_LABELS[itemFinish].label,
           finish: itemFinish,
+          aiBaseImage: aiMockupImages[aiMockupKey(item.id, itemFinish)] ?? null,
         };
       }),
-    [selectedProducts, getProductQuantity, getProductFinish],
+    [selectedProducts, getProductQuantity, getProductFinish, aiMockupImages, aiMockupKey],
   );
 
   const offerFinishSummary = useMemo(() => {
@@ -258,7 +335,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   );
 
   const buildOfferPdfInput = useCallback(
-    () => ({
+    (images: Record<string, string> = aiMockupImages) => ({
       clientName: name.trim(),
       clientEmail: email.trim(),
       clientPhone: phone.trim(),
@@ -267,11 +344,57 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       customType,
       customText,
       imagePreview,
-      lineItems: offerLineItems,
+      lineItems: selectedProducts.map((item) => {
+        const qty = getProductQuantity(item.id);
+        const itemFinish = getProductFinish(item.id);
+        const unit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
+        return {
+          name: item.name,
+          category: item.category,
+          quantity: qty,
+          unitPrice: unit,
+          totalPrice: +(unit * qty).toFixed(2),
+          finishLabel: FINISH_LABELS[itemFinish].label,
+          finish: itemFinish,
+          aiBaseImage: images[aiMockupKey(item.id, itemFinish)] ?? null,
+        };
+      }),
       grandTotal: offerGrandTotal,
     }),
-    [name, email, phone, message, offerFinishSummary, customType, customText, imagePreview, offerLineItems, offerGrandTotal],
+    [
+      name,
+      email,
+      phone,
+      message,
+      offerFinishSummary,
+      customType,
+      customText,
+      imagePreview,
+      selectedProducts,
+      getProductQuantity,
+      getProductFinish,
+      aiMockupImages,
+      aiMockupKey,
+      offerGrandTotal,
+    ],
   );
+
+  const ensureAiMockupsForPdf = useCallback(async () => {
+    const merged = { ...aiMockupImages };
+    for (const item of selectedProducts) {
+      const finish = getProductFinish(item.id);
+      const key = aiMockupKey(item.id, finish);
+      if (merged[key]) continue;
+      try {
+        const result = await generateAiForProduct(item.id, item.name, item.category, finish);
+        merged[key] = result.imageDataUrl;
+      } catch {
+        // PDF-ul folosește mockup static dacă AI eșuează
+      }
+    }
+    setAiMockupImages(merged);
+    return merged;
+  }, [aiMockupImages, selectedProducts, getProductFinish, aiMockupKey, generateAiForProduct]);
 
   const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -300,12 +423,17 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       return;
     }
     try {
-      await generateOfferPdf(buildOfferPdfInput());
+      setGeneratingAllAi(true);
+      const images = await ensureAiMockupsForPdf();
+      await generateOfferPdf(buildOfferPdfInput(images));
       toast.success("Oferta PDF a fost descărcată.");
-    } catch {
-      toast.error("Oferta PDF nu a putut fi generată.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Oferta PDF nu a putut fi generată.";
+      toast.error(message);
+    } finally {
+      setGeneratingAllAi(false);
     }
-  }, [hasProductDetails, name, email, phone, buildOfferPdfInput]);
+  }, [hasProductDetails, name, email, phone, buildOfferPdfInput, ensureAiMockupsForPdf]);
 
   const isValid =
     name.trim() &&
@@ -395,7 +523,8 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
 
     if (hasProductDetails) {
       try {
-        await generateOfferPdf(buildOfferPdfInput());
+        const images = await ensureAiMockupsForPdf();
+        await generateOfferPdf(buildOfferPdfInput(images));
       } catch {
         toast.error("Oferta PDF nu a putut fi generată automat.");
       }
@@ -779,6 +908,27 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         )}
 
         {selectedProducts.length > 0 && (
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={generateAllAiMockups}
+              disabled={generatingAllAi}
+              className="w-full gap-2"
+            >
+              {generatingAllAi ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : (
+                <Sparkles className="w-4 h-4 shrink-0" />
+              )}
+              {generatingAllAi
+                ? "Se generează poze AI pentru produse..."
+                : "Generează poze AI pentru toate produsele"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              OpenAI creează produsul de la zero; textul sau logo-ul tău se aplică apoi pe suprafață (PDF, filă nouă, descărcare mockup).
+            </p>
+            {siteConfig.recaptchaSiteKey ? <RecaptchaNotice /> : null}
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Preview mockup — toate produsele selectate</p>
             {selectedProducts.map((item) => (
@@ -792,9 +942,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                 finish={getProductFinish(item.id)}
                 basePrice={item.basePrice}
                 onFinishChange={(f) => setProductFinish(item.id, f)}
+                aiBaseImage={getAiMockupImage(item.id)}
+                onAiBaseImageChange={(image) =>
+                  setAiMockupImage(item.id, getProductFinish(item.id), image)
+                }
                 triggerLabel={`Preview mockup: ${item.name}`}
               />
             ))}
+          </div>
           </div>
         )}
       </section>

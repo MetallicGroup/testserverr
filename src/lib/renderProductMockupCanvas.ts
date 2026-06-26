@@ -62,9 +62,10 @@ export async function renderProductMockupCanvas(
   customText: string,
   imagePreview: string | null,
   finish: Finish = "medium",
+  customBaseImage?: string | null,
 ): Promise<string> {
   const mockup = getMockupForProduct(productName, productCategory, finish);
-  const productImg = await loadImage(mockup.image);
+  const productImg = await loadImage(customBaseImage || mockup.image);
 
   const sourceW = productImg.naturalWidth || 800;
   const sourceH = productImg.naturalHeight || 800;
@@ -81,7 +82,7 @@ export async function renderProductMockupCanvas(
   if (!ctx) throw new Error("Canvas indisponibil");
 
   ctx.drawImage(productImg, 0, 0, width, height);
-  if (!mockup.usesDedicatedFinishImage) {
+  if (!mockup.usesDedicatedFinishImage && !customBaseImage) {
     applyFinishToCanvas(ctx, width, height, finish);
   }
 

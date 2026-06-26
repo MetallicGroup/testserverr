@@ -44,6 +44,7 @@ export const siteConfig = {
     password: "admin123",
   },
   turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY || "",
+  recaptchaSiteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY || "",
 };
 
 export const storageKeys = {

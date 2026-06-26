@@ -13,6 +13,7 @@ export interface OfferLineItem {
   totalPrice: number;
   finishLabel: string;
   finish: Finish;
+  aiBaseImage?: string | null;
 }
 
 export interface OfferPdfInput {
@@ -254,6 +255,7 @@ export async function generateOfferPdf(input: OfferPdfInput): Promise<void> {
         input.customText,
         input.imagePreview,
         item.finish,
+        item.aiBaseImage,
       ),
     ),
   );

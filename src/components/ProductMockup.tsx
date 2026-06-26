@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Download, ExternalLink } from "lucide-react";
+import { Eye, Download, ExternalLink, Sparkles, Loader2 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
@@ -9,8 +9,11 @@ import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
 import { openProductMockupPreview } from "@/lib/openProductMockupPreview";
+import { generateAiMockup } from "@/lib/generateAiMockup";
 import { FINISH_IMAGE_STYLES, FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
 import { getOverlayPerspective, OVERLAY_IMAGE_STYLE, OVERLAY_TEXT_STYLE } from "@/lib/mockupOverlay";
+import RecaptchaNotice from "@/components/RecaptchaNotice";
+import { siteConfig } from "@/config/siteConfig";
 
 interface ProductMockupProps {
   productName: string;
@@ -22,6 +25,8 @@ interface ProductMockupProps {
   basePrice: number;
   onFinishChange: (value: Finish) => void;
   triggerLabel?: string;
+  aiBaseImage?: string | null;
+  onAiBaseImageChange?: (image: string | null) => void;
 }
 
 function MockupCard({
@@ -146,13 +151,43 @@ export default function ProductMockup({
   basePrice,
   onFinishChange,
   triggerLabel,
+  aiBaseImage,
+  onAiBaseImageChange,
 }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
   const [openingTab, setOpeningTab] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const mockup = getMockupForProduct(productName, productCategory, finish);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
+
+  const resolveCardImage = useCallback(
+    (tier: Finish, tierImage: string) => {
+      if (tier === finish && aiBaseImage) return aiBaseImage;
+      return tierImage;
+    },
+    [finish, aiBaseImage],
+  );
+
+  const handleGenerateAi = useCallback(async () => {
+    setGeneratingAi(true);
+    try {
+      const result = await generateAiMockup({
+        productName,
+        productCategory,
+        mockupKey: mockup.mockupKey,
+        finish,
+      });
+      onAiBaseImageChange?.(result.imageDataUrl);
+      toast.success("Poză AI generată. Textul/logo-ul tău se aplică deasupra.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Generarea AI a eșuat.";
+      toast.error(message);
+    } finally {
+      setGeneratingAi(false);
+    }
+  }, [productName, productCategory, mockup.mockupKey, finish, onAiBaseImageChange]);
 
   const handleOpenInNewTab = useCallback(async () => {
     setOpeningTab(true);
@@ -164,6 +199,7 @@ export default function ProductMockup({
         customText,
         imagePreview,
         finish,
+        aiBaseImage,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Previzualizarea nu a putut fi deschisă.";
@@ -171,7 +207,27 @@ export default function ProductMockup({
     } finally {
       setOpeningTab(false);
     }
-  }, [productName, productCategory, customType, customText, imagePreview, finish]);
+  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
+
+  const handleDownloadPNG = useCallback(async () => {
+    try {
+      const imgData = await renderProductMockupCanvas(
+        productName,
+        productCategory,
+        customType,
+        customText,
+        imagePreview,
+        finish,
+        aiBaseImage,
+      );
+      const link = document.createElement("a");
+      link.href = imgData;
+      link.download = `mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      link.click();
+    } catch {
+      toast.error("Mockup-ul PNG nu a putut fi generat.");
+    }
+  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
 
   const handleDownloadPDF = useCallback(async () => {
     try {
@@ -182,6 +238,7 @@ export default function ProductMockup({
         customText,
         imagePreview,
         finish,
+        aiBaseImage,
       );
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pdfW = pdf.internal.pageSize.getWidth();
@@ -214,10 +271,11 @@ export default function ProductMockup({
       pdf.addImage(imgData, "PNG", (pdfW - w) / 2, (pdfH - h) / 2, w, h);
       pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
     }
-  }, [productName, productCategory, customType, customText, imagePreview, finish]);
+  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
+    <div className="flex flex-col gap-2 min-w-0">
+      <div className="flex flex-col sm:flex-row gap-2 min-w-0">
       <Dialog>
         <DialogTrigger asChild>
           <Button type="button" variant="outline" className="gap-2 w-full sm:flex-1 h-auto py-2.5 whitespace-normal text-left justify-start">
@@ -246,7 +304,7 @@ export default function ProductMockup({
                       key={key}
                       productName={productName}
                       mockupKey={tierMockup.mockupKey}
-                      mockupImage={tierMockup.image}
+                      mockupImage={resolveCardImage(key, tierMockup.image)}
                       printArea={tierMockup.printArea}
                       customType={customType}
                       displayText={displayText}
@@ -255,7 +313,7 @@ export default function ProductMockup({
                       basePrice={basePrice}
                       isSelected={finish === key}
                       onSelect={onFinishChange}
-                      usesDedicatedFinishImage={tierMockup.usesDedicatedFinishImage}
+                      usesDedicatedFinishImage={key === finish && !!aiBaseImage ? true : tierMockup.usesDedicatedFinishImage}
                     />
                   );
                 })}
@@ -266,15 +324,39 @@ export default function ProductMockup({
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <div className="flex flex-col gap-2 mt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleGenerateAi}
+                disabled={generatingAi}
+                className="gap-2 w-full"
+              >
+                {generatingAi ? (
+                  <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                )}
+                {generatingAi ? "Se generează poza AI..." : "Generează poză AI pentru acest produs"}
+              </Button>
+              <p className="text-[11px] text-muted-foreground text-center px-1">
+                OpenAI creează produsul de la zero; textul sau logo-ul tău se aplică apoi precis pe suprafață.
+              </p>
+              {siteConfig.recaptchaSiteKey ? <RecaptchaNotice className="text-center px-1" /> : null}
+              <div className="flex flex-col sm:flex-row gap-2">
               <Button type="button" variant="outline" onClick={handleOpenInNewTab} disabled={openingTab} className="gap-2 flex-1">
                 <ExternalLink className="w-4 h-4 shrink-0" />
                 {openingTab ? "Se deschide..." : "Deschide în filă nouă"}
               </Button>
+              <Button type="button" variant="outline" onClick={handleDownloadPNG} className="gap-2 flex-1">
+                <Download className="w-4 h-4 shrink-0" />
+                Descarcă PNG
+              </Button>
               <Button type="button" onClick={handleDownloadPDF} className="gap-2 flex-1">
                 <Download className="w-4 h-4 shrink-0" />
-                Descarcă mockup PDF
+                Descarcă PDF
               </Button>
+            </div>
             </div>
           </div>
         </DialogContent>
@@ -290,6 +372,7 @@ export default function ProductMockup({
         <ExternalLink className="w-4 h-4" />
         Filă nouă
       </Button>
+      </div>
     </div>
   );
 }
