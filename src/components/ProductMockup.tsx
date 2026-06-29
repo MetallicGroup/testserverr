@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eye, Download, ExternalLink, Sparkles, Loader2 } from "lucide-react";
@@ -11,7 +11,7 @@ import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
 import { openProductMockupPreview } from "@/lib/openProductMockupPreview";
 import { generateAiMockup } from "@/lib/generateAiMockup";
 import { FINISH_IMAGE_STYLES, FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
-import { getOverlayPerspective, OVERLAY_IMAGE_STYLE, OVERLAY_TEXT_STYLE } from "@/lib/mockupOverlay";
+import { getOverlayPerspective, OVERLAY_IMAGE_STYLE, OVERLAY_TEXT_STYLE, OVERLAY_IMAGE_DEDICATED_STYLE, OVERLAY_TEXT_DEDICATED_STYLE } from "@/lib/mockupOverlay";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig } from "@/config/siteConfig";
 
@@ -59,10 +59,18 @@ function MockupCard({
   const meta = FINISH_META[finishKey];
   const visual = FINISH_IMAGE_STYLES[finishKey];
   const price = (basePrice * FINISH_MULTIPLIERS[finishKey]).toFixed(2);
-  const perspective = getOverlayPerspective(mockupKey);
+  const perspective = usesDedicatedFinishImage
+    ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
+    : getOverlayPerspective(mockupKey);
 
   const getFontSize = () => {
     const len = displayText.length;
+    if (usesDedicatedFinishImage) {
+      if (len > 20) return 9;
+      if (len > 12) return 11;
+      if (len > 6) return 13;
+      return 16;
+    }
     if (len > 30) return 7;
     if (len > 20) return 8;
     if (len > 12) return 10;
@@ -115,7 +123,7 @@ function MockupCard({
           {customType === "text" ? (
             <p
               style={{
-                ...OVERLAY_TEXT_STYLE,
+                ...(usesDedicatedFinishImage ? OVERLAY_TEXT_DEDICATED_STYLE : OVERLAY_TEXT_STYLE),
                 fontSize: getFontSize(),
               }}
             >
@@ -126,7 +134,7 @@ function MockupCard({
               <img
                 src={displayImage}
                 alt="Custom"
-                style={OVERLAY_IMAGE_STYLE}
+                style={usesDedicatedFinishImage ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE}
                 crossOrigin="anonymous"
               />
             )
@@ -155,8 +163,10 @@ export default function ProductMockup({
   onAiBaseImageChange,
 }: ProductMockupProps) {
   const mockupRef = useRef<HTMLDivElement>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [openingTab, setOpeningTab] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
+  const autoAiAttemptedRef = useRef(false);
   const mockup = getMockupForProduct(productName, productCategory, finish);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
@@ -170,11 +180,8 @@ export default function ProductMockup({
     [finish, aiBaseImage],
   );
 
-  const handleGenerateAi = useCallback(async () => {
-    if (aiBaseImage) {
-      toast.info("Acest produs are deja o poză AI. Folosește mockup-ul existent sau descarcă PNG/PDF.");
-      return;
-    }
+  const handleGenerateAi = useCallback(async (options?: { silent?: boolean }) => {
+    if (aiBaseImage || generatingAi) return;
     setGeneratingAi(true);
     try {
       const result = await generateAiMockup({
@@ -184,14 +191,26 @@ export default function ProductMockup({
         finish,
       });
       onAiBaseImageChange?.(result.imageDataUrl);
-      toast.success("Poză AI generată. Textul/logo-ul tău se aplică deasupra.");
+      if (!options?.silent) {
+        toast.success("Poză AI generată. Textul/logo-ul tău se aplică deasupra.");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Generarea AI a eșuat.";
       toast.error(message);
     } finally {
       setGeneratingAi(false);
     }
-  }, [productName, productCategory, mockup.mockupKey, finish, onAiBaseImageChange, aiBaseImage]);
+  }, [productName, productCategory, mockup.mockupKey, finish, onAiBaseImageChange, aiBaseImage, generatingAi]);
+
+  useEffect(() => {
+    if (!dialogOpen) {
+      autoAiAttemptedRef.current = false;
+      return;
+    }
+    if (aiBaseImage || generatingAi || autoAiAttemptedRef.current) return;
+    autoAiAttemptedRef.current = true;
+    void handleGenerateAi({ silent: true });
+  }, [dialogOpen, aiBaseImage, generatingAi, handleGenerateAi]);
 
   const handleOpenInNewTab = useCallback(async () => {
     setOpeningTab(true);
@@ -280,7 +299,7 @@ export default function ProductMockup({
   return (
     <div className="flex flex-col gap-2 min-w-0">
       <div className="flex flex-col sm:flex-row gap-2 min-w-0">
-      <Dialog>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button type="button" variant="outline" className="gap-2 w-full sm:flex-1 h-auto py-2.5 whitespace-normal text-left justify-start">
             <Eye className="w-4 h-4" />
@@ -294,6 +313,13 @@ export default function ProductMockup({
                 Comparație finisaje: {productName}
               </DialogTitle>
             </DialogHeader>
+
+            {generatingAi && !aiBaseImage ? (
+              <p className="text-sm text-primary font-medium mt-3 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                Se generează poza AI pentru acest produs...
+              </p>
+            ) : null}
 
             <div ref={mockupRef} className="bg-white p-3 sm:p-4 mt-4 rounded-lg min-w-0 overflow-hidden">
               <p className="text-center text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide mb-4 break-words px-1">
@@ -332,7 +358,7 @@ export default function ProductMockup({
               <Button
                 type="button"
                 variant="secondary"
-                onClick={handleGenerateAi}
+                onClick={() => void handleGenerateAi()}
                 disabled={generatingAi || !!aiBaseImage}
                 className="gap-2 w-full"
               >
@@ -348,7 +374,7 @@ export default function ProductMockup({
                     : "Generează poză AI pentru acest produs"}
               </Button>
               <p className="text-[11px] text-muted-foreground text-center px-1">
-                OpenAI creează produsul de la zero; textul sau logo-ul tău se aplică apoi precis pe suprafață.
+                La deschidere se generează automat poza AI (o dată per produs). Textul sau logo-ul tău se aplică apoi pe suprafață.
               </p>
               {siteConfig.recaptchaSiteKey ? <RecaptchaNotice className="text-center px-1" /> : null}
               <div className="flex flex-col sm:flex-row gap-2">

@@ -39,6 +39,8 @@ export interface MockupConfig {
   imagesByFinish?: Partial<Record<Finish, string>>;
   /** Print area as CSS percentages relative to the image container */
   printArea: { top: string; left: string; width: string; height: string };
+  /** Optional print area overrides per finish (e.g. ergonomic product shapes) */
+  printAreaByFinish?: Partial<Record<Finish, { top: string; left: string; width: string; height: string }>>;
 }
 
 export const MOCKUP_IMAGES: Record<string, MockupConfig> = {
@@ -58,7 +60,16 @@ export const MOCKUP_IMAGES: Record<string, MockupConfig> = {
   banner:    { image: bannerImg,    imagesByFinish: finishImages("banner"),    printArea: { top: "15%", left: "28%", width: "44%", height: "55%" } },
   backpack:  { image: backpackImg,  imagesByFinish: finishImages("backpack"),  printArea: { top: "18%", left: "28%", width: "44%", height: "25%" } },
   powerbank: { image: powerbankImg, imagesByFinish: finishImages("powerbank"), printArea: { top: "28%", left: "22%", width: "56%", height: "30%" } },
-  mousepad:  { image: mousepadImg,  imagesByFinish: finishImages("mousepad"),  printArea: { top: "18%", left: "12%", width: "76%", height: "60%" } },
+  mousepad:  {
+    image: mousepadImg,
+    imagesByFinish: finishImages("mousepad"),
+    printArea: { top: "22%", left: "15%", width: "70%", height: "48%" },
+    printAreaByFinish: {
+      low: { top: "24%", left: "14%", width: "72%", height: "44%" },
+      medium: { top: "20%", left: "14%", width: "72%", height: "46%" },
+      high: { top: "7%", left: "16%", width: "68%", height: "30%" },
+    },
+  },
   wallet:    { image: walletImg,    imagesByFinish: finishImages("wallet"),    printArea: { top: "25%", left: "18%", width: "64%", height: "45%" } },
   lanyard:   { image: lanyardImg,   imagesByFinish: finishImages("lanyard"),   printArea: { top: "15%", left: "32%", width: "36%", height: "25%" } },
   badge:     { image: badgeImg,     imagesByFinish: finishImages("badge"),     printArea: { top: "20%", left: "20%", width: "60%", height: "60%" } },
@@ -222,13 +233,17 @@ export function getMockupForProduct(name: string, category: string, finish?: Fin
     ? overrideKey
     : CATEGORY_TO_MOCKUP[category] || "generic";
   const config = MOCKUP_IMAGES[baseKey] || MOCKUP_IMAGES.generic;
+  const resolvedPrintArea =
+    finish && config.printAreaByFinish?.[finish] ? config.printAreaByFinish[finish]! : config.printArea;
+
   if (finish && config.imagesByFinish?.[finish]) {
     return {
       ...config,
       mockupKey: baseKey,
       image: config.imagesByFinish[finish]!,
+      printArea: resolvedPrintArea,
       usesDedicatedFinishImage: true,
     };
   }
-  return { ...config, mockupKey: baseKey, usesDedicatedFinishImage: false };
+  return { ...config, mockupKey: baseKey, printArea: resolvedPrintArea, usesDedicatedFinishImage: false };
 }

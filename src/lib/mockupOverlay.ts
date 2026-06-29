@@ -32,7 +32,7 @@ const PERSPECTIVE_BY_KEY: Record<string, Partial<OverlayPerspective>> = {
   powerbank: { cssTransform: "perspective(380px) rotateY(-12deg)", rotate: -0.07, scaleY: 0.93, skewX: -0.1 },
   umbrella: { cssTransform: "perspective(450px) rotateY(-8deg) rotateX(5deg)", rotate: -0.05, scaleY: 0.94, skewX: -0.06 },
   banner: { cssTransform: "perspective(700px) rotateY(-2deg)", rotate: -0.02, scaleY: 0.98, skewX: -0.02 },
-  mousepad: { cssTransform: "perspective(800px) rotateX(14deg)", rotate: 0, scaleY: 0.82, skewX: 0 },
+  mousepad: { cssTransform: "perspective(900px) rotateX(18deg)", rotate: 0, scaleY: 0.78, skewX: 0 },
   badge: { cssTransform: "perspective(400px) rotateX(4deg)", rotate: 0, scaleY: 0.96, skewX: 0 },
   keychain: { cssTransform: "perspective(500px) rotateX(8deg)", rotate: 0.03, scaleY: 0.92, skewX: 0.04 },
   lanyard: { cssTransform: "perspective(600px) rotateX(6deg)", rotate: 0.04, scaleY: 0.94, skewX: 0.03 },
@@ -68,6 +68,29 @@ export const OVERLAY_IMAGE_STYLE: CSSProperties = {
   filter: "contrast(1.05) saturate(0.95)",
 };
 
+/** Flatter overlay for dedicated finish photos (already studio-shot). */
+export const OVERLAY_TEXT_DEDICATED_STYLE: CSSProperties = {
+  color: "#1f1f28",
+  fontWeight: 700,
+  textAlign: "center",
+  wordBreak: "break-word",
+  lineHeight: 1.1,
+  maxWidth: "92%",
+  padding: "1px 2px",
+  mixBlendMode: "multiply",
+  opacity: 0.92,
+  textShadow: "0 1px 1px rgba(255,255,255,0.35)",
+};
+
+export const OVERLAY_IMAGE_DEDICATED_STYLE: CSSProperties = {
+  maxWidth: "90%",
+  maxHeight: "90%",
+  objectFit: "contain",
+  mixBlendMode: "multiply",
+  opacity: 0.88,
+  filter: "contrast(1.08)",
+};
+
 function applyCanvasPerspective(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -94,8 +117,11 @@ export function drawMockupText(
   areaW: number,
   areaH: number,
   mockupKey: string,
+  flatOverlay = false,
 ): void {
-  const perspective = getOverlayPerspective(mockupKey);
+  const perspective = flatOverlay
+    ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
+    : getOverlayPerspective(mockupKey);
   const cx = left + areaW / 2;
   const cy = top + areaH / 2;
 
@@ -148,8 +174,11 @@ export function drawMockupImage(
   areaW: number,
   areaH: number,
   mockupKey: string,
+  flatOverlay = false,
 ): void {
-  const perspective = getOverlayPerspective(mockupKey);
+  const perspective = flatOverlay
+    ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
+    : getOverlayPerspective(mockupKey);
   const cx = left + areaW / 2;
   const cy = top + areaH / 2;
   const scale = Math.min((areaW * 0.88) / overlay.width, (areaH * 0.88) / overlay.height);

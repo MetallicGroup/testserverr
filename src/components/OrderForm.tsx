@@ -837,7 +837,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         {selectedProducts.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Poze AI: deschide preview-ul fiecărui produs și apasă „Generează poză AI” — o singură generare per produs. PDF-ul folosește pozele AI deja generate sau mockup-ul standard.
+              Deschide preview-ul unui produs — poza AI se generează automat o dată. Textul/logo-ul se aplică pe suprafață (PNG, PDF, filă nouă).
             </p>
             {siteConfig.recaptchaSiteKey ? <RecaptchaNotice /> : null}
           <div className="space-y-2">
