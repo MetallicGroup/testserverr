@@ -129,16 +129,18 @@ function buildPrompt(desc: string, finish: Finish): string {
   ].join(" ");
 }
 
-async function generateImage(apiKey: string, prompt: string): Promise<Buffer> {
+async function generateImage(apiKey: string, prompt: string, finish: Finish): Promise<Buffer> {
+  const model = process.env.OPENAI_IMAGE_MODEL?.trim() || "gpt-image-1-mini";
+  const quality = finish === "low" ? "low" : finish === "high" ? "high" : "medium";
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "dall-e-2",
+      model,
       prompt,
       n: 1,
       size: "1024x1024",
-      quality: "standard",
+      quality,
     }),
   });
   const payload = (await res.json()) as {
@@ -192,7 +194,7 @@ async function main() {
 
       try {
         console.log(`… generating ${key}-${finish}`);
-        const buf = await generateImage(apiKey, buildPrompt(desc, finish));
+        const buf = await generateImage(apiKey, buildPrompt(desc, finish), finish);
         writeFileSync(out, buf);
         console.log(`✓ saved ${key}-${finish}`);
         await new Promise((r) => setTimeout(r, 1500));

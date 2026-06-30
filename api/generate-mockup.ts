@@ -48,6 +48,58 @@ const MOCKUP_PRODUCT_DESC: Record<string, string> = {
   generic: "a white promotional gift product",
 };
 
+const DEFAULT_IMAGE_MODEL = "gpt-image-1-mini";
+
+function getImageModel(): string {
+  return process.env.OPENAI_IMAGE_MODEL?.trim() || DEFAULT_IMAGE_MODEL;
+}
+
+function finishToImageQuality(finish: Finish): "low" | "medium" | "high" {
+  if (finish === "low") return "low";
+  if (finish === "high") return "high";
+  return "medium";
+}
+
+async function generateOpenAiImage(
+  apiKey: string,
+  prompt: string,
+  finish: Finish,
+): Promise<Buffer> {
+  const openAiRes = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: getImageModel(),
+      prompt,
+      n: 1,
+      size: "1024x1024",
+      quality: finishToImageQuality(finish),
+    }),
+  });
+
+  const payload = (await openAiRes.json()) as {
+    error?: { message?: string };
+    data?: Array<{ url?: string; b64_json?: string }>;
+  };
+
+  if (!openAiRes.ok) {
+    throw new Error(payload.error?.message || "OpenAI a returnat o eroare.");
+  }
+
+  const b64 = payload.data?.[0]?.b64_json;
+  if (b64) return Buffer.from(b64, "base64");
+
+  const url = payload.data?.[0]?.url;
+  if (!url) throw new Error("Imaginea generată lipsește din răspuns.");
+
+  const imgRes = await fetch(url);
+  if (!imgRes.ok) throw new Error("Nu s-a putut descărca imaginea generată.");
+  return Buffer.from(await imgRes.arrayBuffer());
+}
+
 function buildAiMockupPrompt(
   productName: string,
   mockupKey: string,
@@ -169,48 +221,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const prompt = buildAiMockupPrompt(productName, mockupKey, finish, body.aiDescription);
 
-    const openAiRes = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard",
-      }),
-    });
-
-    const payload = (await openAiRes.json()) as {
-      error?: { message?: string };
-      data?: Array<{ url?: string; b64_json?: string }>;
-    };
-
-    if (!openAiRes.ok) {
-      return res.status(openAiRes.status).json({
-        error: payload.error?.message || "OpenAI a returnat o eroare.",
-      });
-    }
-
-    const b64 = payload.data?.[0]?.b64_json;
-    let imageDataUrl: string;
-    if (b64) {
-      imageDataUrl = `data:image/png;base64,${b64}`;
-    } else {
-      const url = payload.data?.[0]?.url;
-      if (!url) {
-        return res.status(502).json({ error: "Imaginea generată lipsește din răspuns." });
-      }
-      const imgRes = await fetch(url);
-      if (!imgRes.ok) {
-        return res.status(502).json({ error: "Nu s-a putut descărca imaginea generată." });
-      }
-      const buf = Buffer.from(await imgRes.arrayBuffer());
-      imageDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
-    }
+    const imageBuffer = await generateOpenAiImage(apiKey, prompt, finish);
+    const imageDataUrl = `data:image/png;base64,${imageBuffer.toString("base64")}`;
 
     return res.status(200).json({
       imageDataUrl,
