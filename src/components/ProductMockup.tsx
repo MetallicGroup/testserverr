@@ -1,7 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Download, ExternalLink, Sparkles, Loader2 } from "lucide-react";
+import { Eye, Download, ExternalLink, Loader2 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
@@ -10,8 +10,14 @@ import { getMockupForProduct } from "@/data/mockupImages";
 import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
 import { openProductMockupPreview } from "@/lib/openProductMockupPreview";
 import { generateAiMockup } from "@/lib/generateAiMockup";
-import { FINISH_IMAGE_STYLES, FINISH_META, FINISH_MULTIPLIERS, type Finish } from "@/lib/finishOptions";
-import { getOverlayPerspective, OVERLAY_IMAGE_STYLE, OVERLAY_TEXT_STYLE, OVERLAY_IMAGE_DEDICATED_STYLE, OVERLAY_TEXT_DEDICATED_STYLE } from "@/lib/mockupOverlay";
+import { FINISH_META, type Finish } from "@/lib/finishOptions";
+import {
+  getOverlayPerspective,
+  OVERLAY_IMAGE_STYLE,
+  OVERLAY_TEXT_STYLE,
+  OVERLAY_IMAGE_DEDICATED_STYLE,
+  OVERLAY_TEXT_DEDICATED_STYLE,
+} from "@/lib/mockupOverlay";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig } from "@/config/siteConfig";
 
@@ -22,43 +28,33 @@ interface ProductMockupProps {
   customText: string;
   imagePreview: string | null;
   finish: Finish;
-  basePrice: number;
-  onFinishChange: (value: Finish) => void;
   triggerLabel?: string;
   aiBaseImage?: string | null;
   onAiBaseImageChange?: (image: string | null) => void;
 }
 
-function MockupCard({
+function SingleMockupPreview({
   productName,
+  mockupKey,
   mockupImage,
   printArea,
   customType,
   displayText,
   displayImage,
-  finishKey,
-  basePrice,
-  isSelected,
-  onSelect,
-  mockupKey,
+  finish,
   usesDedicatedFinishImage,
 }: {
   productName: string;
-  mockupImage: string;
   mockupKey: string;
+  mockupImage: string;
   printArea: { top: string; left: string; width: string; height: string };
   customType: "text" | "image";
   displayText: string;
   displayImage: string | null;
-  finishKey: Finish;
-  basePrice: number;
-  isSelected: boolean;
-  onSelect: (finish: Finish) => void;
+  finish: Finish;
   usesDedicatedFinishImage?: boolean;
 }) {
-  const meta = FINISH_META[finishKey];
-  const visual = FINISH_IMAGE_STYLES[finishKey];
-  const price = (basePrice * FINISH_MULTIPLIERS[finishKey]).toFixed(2);
+  const meta = FINISH_META[finish];
   const perspective = usesDedicatedFinishImage
     ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
     : getOverlayPerspective(mockupKey);
@@ -66,49 +62,32 @@ function MockupCard({
   const getFontSize = () => {
     const len = displayText.length;
     if (usesDedicatedFinishImage) {
-      if (len > 20) return 9;
-      if (len > 12) return 11;
-      if (len > 6) return 13;
-      return 16;
+      if (len > 20) return 14;
+      if (len > 12) return 16;
+      if (len > 6) return 20;
+      return 24;
     }
-    if (len > 30) return 7;
-    if (len > 20) return 8;
-    if (len > 12) return 10;
-    if (len > 6) return 12;
-    return 14;
+    if (len > 30) return 10;
+    if (len > 20) return 12;
+    if (len > 12) return 14;
+    if (len > 6) return 18;
+    return 22;
   };
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(finishKey)}
-      className={`w-full min-w-0 rounded-xl border-2 transition-all p-2.5 sm:p-3 text-left ${
-        isSelected ? "border-primary shadow-lg bg-white" : "border-border/50 bg-white/80 opacity-90"
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.badge}`}>
+    <div className="mx-auto w-full max-w-md">
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${meta.badge}`}>
           {meta.label}
         </span>
-        <span className="text-xs sm:text-sm font-bold shrink-0" style={{ color: meta.color }}>
-          {price} RON
-        </span>
       </div>
-
-      <div className="relative mx-auto w-full max-w-[180px] [isolation:isolate]">
+      <div className="relative mx-auto w-full [isolation:isolate]">
         <img
           src={mockupImage}
           alt={`${productName} - ${meta.label}`}
-          className="w-full h-auto object-contain transition-all duration-300"
-          style={{ filter: usesDedicatedFinishImage ? "none" : visual.filter }}
+          className="w-full h-auto object-contain"
           crossOrigin="anonymous"
         />
-        {!usesDedicatedFinishImage && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: visual.overlay }}
-        />
-        )}
         <div
           className="absolute flex items-center justify-center overflow-hidden"
           style={{
@@ -133,7 +112,7 @@ function MockupCard({
             displayImage && (
               <img
                 src={displayImage}
-                alt="Custom"
+                alt="Personalizare"
                 style={usesDedicatedFinishImage ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE}
                 crossOrigin="anonymous"
               />
@@ -141,11 +120,7 @@ function MockupCard({
           )}
         </div>
       </div>
-
-      {isSelected && (
-        <p className="text-center text-[10px] text-primary font-semibold mt-2">✓ Selectat</p>
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -156,8 +131,6 @@ export default function ProductMockup({
   customText,
   imagePreview,
   finish,
-  basePrice,
-  onFinishChange,
   triggerLabel,
   aiBaseImage,
   onAiBaseImageChange,
@@ -166,22 +139,15 @@ export default function ProductMockup({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [openingTab, setOpeningTab] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
-  const autoAiAttemptedRef = useRef(false);
   const mockup = getMockupForProduct(productName, productCategory, finish);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
+  const previewImage = aiBaseImage || mockup.image;
+  const usesDedicated = !!aiBaseImage || mockup.usesDedicatedFinishImage;
 
-  const resolveCardImage = useCallback(
-    (tier: Finish, tierImage: string) => {
-      if (tier === finish && aiBaseImage) return aiBaseImage;
-      return tierImage;
-    },
-    [finish, aiBaseImage],
-  );
-
-  const handleGenerateAi = useCallback(async (options?: { silent?: boolean }) => {
-    if (aiBaseImage || generatingAi) return;
+  const handleGenerateAi = useCallback(async () => {
+    if (generatingAi) return;
     setGeneratingAi(true);
     try {
       const result = await generateAiMockup({
@@ -192,25 +158,27 @@ export default function ProductMockup({
         aiDescription: mockup.aiDescription,
       });
       onAiBaseImageChange?.(result.imageDataUrl);
-      if (!options?.silent) {
-        toast.success("Poză AI generată. Textul/logo-ul tău se aplică deasupra.");
-      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Generarea AI a eșuat.";
       toast.error(message);
+      setDialogOpen(false);
     } finally {
       setGeneratingAi(false);
     }
-  }, [productName, productCategory, mockup.mockupKey, finish, onAiBaseImageChange, aiBaseImage, generatingAi]);
+  }, [
+    productName,
+    productCategory,
+    mockup.mockupKey,
+    mockup.aiDescription,
+    finish,
+    onAiBaseImageChange,
+    generatingAi,
+  ]);
 
   useEffect(() => {
-    if (!dialogOpen) {
-      autoAiAttemptedRef.current = false;
-      return;
-    }
-    if (aiBaseImage || generatingAi || autoAiAttemptedRef.current) return;
-    autoAiAttemptedRef.current = true;
-    void handleGenerateAi({ silent: true });
+    if (!dialogOpen) return;
+    if (aiBaseImage || generatingAi) return;
+    void handleGenerateAi();
   }, [dialogOpen, aiBaseImage, generatingAi, handleGenerateAi]);
 
   const handleOpenInNewTab = useCallback(async () => {
@@ -298,116 +266,83 @@ export default function ProductMockup({
   }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
 
   return (
-    <div className="flex flex-col gap-2 min-w-0">
-      <div className="flex flex-col sm:flex-row gap-2 min-w-0">
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>
-          <Button type="button" variant="outline" className="gap-2 w-full sm:flex-1 h-auto py-2.5 whitespace-normal text-left justify-start">
-            <Eye className="w-4 h-4" />
-            {triggerLabel ?? "Compară finisaje & Preview mockup"}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-4xl w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden">
-          <div className="overflow-y-auto max-h-[90dvh] p-4 sm:p-6">
-            <DialogHeader className="pr-2">
-              <DialogTitle className="text-base sm:text-lg text-left">
-                Comparație finisaje: {productName}
-              </DialogTitle>
-            </DialogHeader>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2 w-full h-auto py-2.5 whitespace-normal text-left justify-start"
+        >
+          <Eye className="w-4 h-4 shrink-0" />
+          {triggerLabel ?? `Preview mockup: ${productName}`}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden">
+        <div className="overflow-y-auto max-h-[90dvh] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base sm:text-lg text-left">
+              {productName} — {FINISH_META[finish].label}
+            </DialogTitle>
+          </DialogHeader>
 
-            {generatingAi && !aiBaseImage ? (
-              <p className="text-sm text-primary font-medium mt-3 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                Se generează poza AI pentru acest produs...
+          {generatingAi ? (
+            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+              <p className="text-sm font-medium text-foreground">
+                Se generează mockup-ul AI...
               </p>
-            ) : null}
-
-            <div ref={mockupRef} className="bg-white p-3 sm:p-4 mt-4 rounded-lg min-w-0 overflow-hidden">
-              <p className="text-center text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide mb-4 break-words px-1">
-                {productName} — Comparație calitate finisaj
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-w-0">
-                {(["low", "medium", "high"] as Finish[]).map((key) => {
-                  const tierMockup = getMockupForProduct(productName, productCategory, key);
-                  return (
-                    <MockupCard
-                      key={key}
-                      productName={productName}
-                      mockupKey={tierMockup.mockupKey}
-                      mockupImage={resolveCardImage(key, tierMockup.image)}
-                      printArea={tierMockup.printArea}
-                      customType={customType}
-                      displayText={displayText}
-                      displayImage={displayImage}
-                      finishKey={key}
-                      basePrice={basePrice}
-                      isSelected={finish === key}
-                      onSelect={onFinishChange}
-                      usesDedicatedFinishImage={key === finish && !!aiBaseImage ? true : tierMockup.usesDedicatedFinishImage}
-                    />
-                  );
-                })}
-              </div>
-
-              <p className="text-center text-[9px] text-gray-300 uppercase tracking-wide mt-4 break-words">
-                avozenevo mockup previzualizare
+              <p className="text-xs text-muted-foreground">
+                Generarea durează aproximativ 5–10 secunde.
               </p>
             </div>
+          ) : (
+            <div ref={mockupRef} className="bg-white p-3 sm:p-4 mt-4 rounded-lg">
+              <SingleMockupPreview
+                productName={productName}
+                mockupKey={mockup.mockupKey}
+                mockupImage={previewImage}
+                printArea={mockup.printArea}
+                customType={customType}
+                displayText={displayText}
+                displayImage={displayImage}
+                finish={finish}
+                usesDedicatedFinishImage={usesDedicated}
+              />
+              <p className="text-center text-[10px] text-muted-foreground mt-3">
+                {customType === "text"
+                  ? "Textul tău este aplicat pe produs."
+                  : "Logo-ul / imaginea ta este aplicată pe produs."}
+              </p>
+            </div>
+          )}
 
+          {!generatingAi && aiBaseImage ? (
             <div className="flex flex-col gap-2 mt-4">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => void handleGenerateAi()}
-                disabled={generatingAi || !!aiBaseImage}
-                className="gap-2 w-full"
-              >
-                {generatingAi ? (
-                  <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                )}
-                {generatingAi
-                  ? "Se generează poza AI..."
-                  : aiBaseImage
-                    ? "Poză AI generată ✓"
-                    : "Generează poză AI pentru acest produs"}
-              </Button>
-              <p className="text-[11px] text-muted-foreground text-center px-1">
-                La deschidere se generează automat poza AI (o dată per produs). Textul sau logo-ul tău se aplică apoi pe suprafață.
-              </p>
-              {siteConfig.recaptchaSiteKey ? <RecaptchaNotice className="text-center px-1" /> : null}
+              {siteConfig.recaptchaSiteKey ? <RecaptchaNotice className="text-center" /> : null}
               <div className="flex flex-col sm:flex-row gap-2">
-              <Button type="button" variant="outline" onClick={handleOpenInNewTab} disabled={openingTab} className="gap-2 flex-1">
-                <ExternalLink className="w-4 h-4 shrink-0" />
-                {openingTab ? "Se deschide..." : "Deschide în filă nouă"}
-              </Button>
-              <Button type="button" variant="outline" onClick={handleDownloadPNG} className="gap-2 flex-1">
-                <Download className="w-4 h-4 shrink-0" />
-                Descarcă PNG
-              </Button>
-              <Button type="button" onClick={handleDownloadPDF} className="gap-2 flex-1">
-                <Download className="w-4 h-4 shrink-0" />
-                Descarcă PDF
-              </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleOpenInNewTab}
+                  disabled={openingTab}
+                  className="gap-2 flex-1"
+                >
+                  <ExternalLink className="w-4 h-4 shrink-0" />
+                  {openingTab ? "Se deschide..." : "Deschide în filă nouă"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleDownloadPNG} className="gap-2 flex-1">
+                  <Download className="w-4 h-4 shrink-0" />
+                  PNG
+                </Button>
+                <Button type="button" onClick={handleDownloadPDF} className="gap-2 flex-1">
+                  <Download className="w-4 h-4 shrink-0" />
+                  PDF
+                </Button>
+              </div>
             </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={handleOpenInNewTab}
-        disabled={openingTab}
-        className="gap-2 w-full sm:w-auto sm:shrink-0"
-      >
-        <ExternalLink className="w-4 h-4" />
-        Filă nouă
-      </Button>
-      </div>
-    </div>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

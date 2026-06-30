@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import businessDomains from "@/data/businessDomains";
 import ProductMockup from "@/components/ProductMockup";
+import AllProductsMockupPreview from "@/components/AllProductsMockupPreview";
 import ProductFinishPicker from "@/components/ProductFinishPicker";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
@@ -135,7 +136,14 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   );
 
   const setProductFinish = useCallback((productId: string, finish: Finish) => {
-    setProductFinishes((prev) => ({ ...prev, [productId]: finish }));
+    setProductFinishes((prev) => {
+      if (prev[productId] === finish) return prev;
+      setAiMockupImages((images) => {
+        const { [productId]: _removed, ...rest } = images;
+        return rest;
+      });
+      return { ...prev, [productId]: finish };
+    });
   }, []);
 
   const applyBulkFinish = useCallback(() => {
@@ -143,6 +151,13 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       const next = { ...prev };
       selectedProductIds.forEach((id) => {
         next[id] = bulkFinish;
+      });
+      return next;
+    });
+    setAiMockupImages((prev) => {
+      const next = { ...prev };
+      selectedProductIds.forEach((id) => {
+        delete next[id];
       });
       return next;
     });
@@ -556,7 +571,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       <section className="space-y-4">
         <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <span className="min-w-0 break-words">2. Alege unul sau mai multe produse <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+          <span className="min-w-0 break-words">2. Alege produsele și finisajul <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         {selectedCategory && (
@@ -803,7 +818,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Finisajul se alege per produs în lista de mai sus. Poți folosi „Finisaj la toate” pentru a aplica același nivel la toate produsele.
+          Finisajul se alege la pasul 2, per produs. La preview se generează o singură imagine AI — strict pentru finisajul ales (Basic, Standard sau Premium).
         </p>
 
         {selectedProducts.length > 0 && (
@@ -837,28 +852,42 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         {selectedProducts.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Deschide preview-ul unui produs — poza AI se generează automat o dată. Textul/logo-ul se aplică pe suprafață (PNG, PDF, filă nouă).
+              Apasă preview pentru a genera mockup-ul AI. Generarea durează 5–10 secunde per produs.
+              Textul sau logo-ul din pasul 3 se aplică automat pe produs.
             </p>
             {siteConfig.recaptchaSiteKey ? <RecaptchaNotice /> : null}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Preview mockup — toate produsele selectate</p>
-            {selectedProducts.map((item) => (
-              <ProductMockup
-                key={item.id}
-                productName={item.name}
-                productCategory={item.category}
+
+            {selectedProducts.length > 1 ? (
+              <AllProductsMockupPreview
+                products={selectedProducts.map((p) => ({ id: p.id, name: p.name, category: p.category }))}
+                getFinish={getProductFinish}
                 customType={customType}
                 customText={customText}
                 imagePreview={imagePreview}
-                finish={getProductFinish(item.id)}
-                basePrice={item.basePrice}
-                onFinishChange={(f) => setProductFinish(item.id, f)}
-                aiBaseImage={getAiMockupImage(item.id)}
-                onAiBaseImageChange={(image) => setAiMockupImage(item.id, image)}
-                triggerLabel={`Preview mockup: ${item.name}`}
+                getAiMockupImage={getAiMockupImage}
+                setAiMockupImage={setAiMockupImage}
               />
-            ))}
-          </div>
+            ) : null}
+
+            <div className="space-y-2">
+              {selectedProducts.length > 1 ? (
+                <p className="text-sm font-medium text-foreground">Sau preview per produs:</p>
+              ) : null}
+              {selectedProducts.map((item) => (
+                <ProductMockup
+                  key={item.id}
+                  productName={item.name}
+                  productCategory={item.category}
+                  customType={customType}
+                  customText={customText}
+                  imagePreview={imagePreview}
+                  finish={getProductFinish(item.id)}
+                  aiBaseImage={getAiMockupImage(item.id)}
+                  onAiBaseImageChange={(image) => setAiMockupImage(item.id, image)}
+                  triggerLabel={`Preview mockup: ${item.name}`}
+                />
+              ))}
+            </div>
           </div>
         )}
       </section>
