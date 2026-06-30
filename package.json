@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "generate-mockups": "tsx scripts/generate-mockup-assets.mts",
+    "generate-mockups:force": "tsx scripts/generate-mockup-assets.mts --force",
     "build:prerender": "vite build && react-snap",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

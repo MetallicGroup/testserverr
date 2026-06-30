@@ -189,6 +189,7 @@ export default function ProductMockup({
         productCategory,
         mockupKey: mockup.mockupKey,
         finish,
+        aiDescription: mockup.aiDescription,
       });
       onAiBaseImageChange?.(result.imageDataUrl);
       if (!options?.silent) {

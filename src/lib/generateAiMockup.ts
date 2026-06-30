@@ -6,6 +6,7 @@ export interface GenerateAiMockupInput {
   productCategory: string;
   mockupKey: string;
   finish: Finish;
+  aiDescription?: string;
 }
 
 export interface GenerateAiMockupResult {
@@ -44,6 +45,7 @@ export async function generateAiMockup(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ...input,
+      aiDescription: input.aiDescription,
       recaptchaToken: recaptchaToken ?? undefined,
     }),
   });

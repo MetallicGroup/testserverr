@@ -8,6 +8,7 @@ interface GenerateMockupBody {
   mockupKey?: string;
   finish?: Finish;
   recaptchaToken?: string;
+  aiDescription?: string;
 }
 
 const RECAPTCHA_ACTION = "generate_mockup";
@@ -47,8 +48,16 @@ const MOCKUP_PRODUCT_DESC: Record<string, string> = {
   generic: "a white promotional gift product",
 };
 
-function buildAiMockupPrompt(productName: string, mockupKey: string, finish: Finish): string {
-  const product = MOCKUP_PRODUCT_DESC[mockupKey] || `a promotional ${productName}`;
+function buildAiMockupPrompt(
+  productName: string,
+  mockupKey: string,
+  finish: Finish,
+  aiDescription?: string,
+): string {
+  const product =
+    aiDescription?.trim() ||
+    MOCKUP_PRODUCT_DESC[mockupKey] ||
+    `a promotional ${productName}`;
   const tier = FINISH_PROMPT[finish];
 
   return [
@@ -158,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: recaptcha.error });
     }
 
-    const prompt = buildAiMockupPrompt(productName, mockupKey, finish);
+    const prompt = buildAiMockupPrompt(productName, mockupKey, finish, body.aiDescription);
 
     const openAiRes = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -172,13 +181,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         n: 1,
         size: "1024x1024",
         quality: "standard",
-        response_format: "b64_json",
       }),
     });
 
     const payload = (await openAiRes.json()) as {
       error?: { message?: string };
-      data?: Array<{ b64_json?: string }>;
+      data?: Array<{ url?: string; b64_json?: string }>;
     };
 
     if (!openAiRes.ok) {
@@ -188,12 +196,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const b64 = payload.data?.[0]?.b64_json;
-    if (!b64) {
-      return res.status(502).json({ error: "Imaginea generată lipsește din răspuns." });
+    let imageDataUrl: string;
+    if (b64) {
+      imageDataUrl = `data:image/png;base64,${b64}`;
+    } else {
+      const url = payload.data?.[0]?.url;
+      if (!url) {
+        return res.status(502).json({ error: "Imaginea generată lipsește din răspuns." });
+      }
+      const imgRes = await fetch(url);
+      if (!imgRes.ok) {
+        return res.status(502).json({ error: "Nu s-a putut descărca imaginea generată." });
+      }
+      const buf = Buffer.from(await imgRes.arrayBuffer());
+      imageDataUrl = `data:image/png;base64,${buf.toString("base64")}`;
     }
 
     return res.status(200).json({
-      imageDataUrl: `data:image/png;base64,${b64}`,
+      imageDataUrl,
       prompt,
     });
   } catch (error) {
