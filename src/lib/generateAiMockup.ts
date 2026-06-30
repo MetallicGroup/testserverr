@@ -1,4 +1,5 @@
 import type { Finish } from "@/lib/finishOptions";
+import type { ProductColorId } from "@/lib/productColors";
 import { getRecaptchaMockupToken } from "@/lib/recaptchaV3";
 
 export interface GenerateAiMockupInput {
@@ -6,6 +7,7 @@ export interface GenerateAiMockupInput {
   productCategory: string;
   mockupKey: string;
   finish: Finish;
+  productColor?: ProductColorId;
   aiDescription?: string;
 }
 

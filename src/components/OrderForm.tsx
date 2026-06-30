@@ -17,12 +17,14 @@ import businessDomains from "@/data/businessDomains";
 import ProductMockup from "@/components/ProductMockup";
 import AllProductsMockupPreview from "@/components/AllProductsMockupPreview";
 import ProductFinishPicker from "@/components/ProductFinishPicker";
+import ProductColorPicker from "@/components/ProductColorPicker";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig, storageKeys } from "@/config/siteConfig";
 import { getProductsFromStore } from "@/lib/productStore";
 import { generateOfferPdf } from "@/lib/generateOfferPdf";
 import { FINISH_LABELS, FINISH_MULTIPLIERS, DEFAULT_PRODUCT_QUANTITY, DEFAULT_FINISH, type Finish } from "@/lib/finishOptions";
+import { DEFAULT_PRODUCT_COLOR, getProductColorLabel, type ProductColorId } from "@/lib/productColors";
 
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
   medical: <Heart className="w-5 h-5" />,
@@ -72,7 +74,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [productFinishes, setProductFinishes] = useState<Record<string, Finish>>({});
+  const [productColors, setProductColors] = useState<Record<string, ProductColorId>>({});
   const [bulkFinish, setBulkFinish] = useState<Finish>(DEFAULT_FINISH);
+  const [bulkColor, setBulkColor] = useState<ProductColorId>(DEFAULT_PRODUCT_COLOR);
   const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
   const [bulkQuantity, setBulkQuantity] = useState<string>(String(DEFAULT_PRODUCT_QUANTITY));
   const [name, setName] = useState("");
@@ -113,6 +117,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       setSelectedProductIds([preselectedProductId]);
       setProductQuantities({ [preselectedProductId]: DEFAULT_PRODUCT_QUANTITY });
       setProductFinishes({ [preselectedProductId]: DEFAULT_FINISH });
+      setProductColors({ [preselectedProductId]: DEFAULT_PRODUCT_COLOR });
       const p = products.find((pr) => pr.id === preselectedProductId);
       if (p) setSelectedCategory(p.category);
     }
@@ -146,6 +151,22 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     });
   }, []);
 
+  const getProductColor = useCallback(
+    (productId: string) => productColors[productId] ?? DEFAULT_PRODUCT_COLOR,
+    [productColors],
+  );
+
+  const setProductColor = useCallback((productId: string, color: ProductColorId) => {
+    setProductColors((prev) => {
+      if (prev[productId] === color) return prev;
+      setAiMockupImages((images) => {
+        const { [productId]: _removed, ...rest } = images;
+        return rest;
+      });
+      return { ...prev, [productId]: color };
+    });
+  }, []);
+
   const applyBulkFinish = useCallback(() => {
     setProductFinishes((prev) => {
       const next = { ...prev };
@@ -163,6 +184,24 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     });
     toast.success(`Finisajul ${FINISH_LABELS[bulkFinish].label} a fost aplicat la toate produsele.`);
   }, [bulkFinish, selectedProductIds]);
+
+  const applyBulkColor = useCallback(() => {
+    setProductColors((prev) => {
+      const next = { ...prev };
+      selectedProductIds.forEach((id) => {
+        next[id] = bulkColor;
+      });
+      return next;
+    });
+    setAiMockupImages((prev) => {
+      const next = { ...prev };
+      selectedProductIds.forEach((id) => {
+        delete next[id];
+      });
+      return next;
+    });
+    toast.success(`Culoarea ${getProductColorLabel(bulkColor)} a fost aplicată la toate produsele.`);
+  }, [bulkColor, selectedProductIds]);
 
   const applyBulkQuantity = useCallback(() => {
     const parsed = Math.max(1, parseInt(bulkQuantity, 10) || DEFAULT_PRODUCT_QUANTITY);
@@ -192,6 +231,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           const { [productId]: _f, ...rest } = finishes;
           return rest;
         });
+        setProductColors((colors) => {
+          const { [productId]: _c, ...rest } = colors;
+          return rest;
+        });
         setAiMockupImages((images) => {
           const { [productId]: _removed, ...rest } = images;
           return rest;
@@ -206,6 +249,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       setProductFinishes((finishes) => ({
         ...finishes,
         [productId]: finishes[productId] ?? DEFAULT_FINISH,
+      }));
+      setProductColors((colors) => ({
+        ...colors,
+        [productId]: colors[productId] ?? DEFAULT_PRODUCT_COLOR,
       }));
       return [...prev, productId];
     });
@@ -225,6 +272,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
         const { [productId]: _f, ...rest } = finishes;
         return rest;
       });
+      setProductColors((colors) => {
+        const { [productId]: _c, ...rest } = colors;
+        return rest;
+      });
       setAiMockupImages((images) => {
         const { [productId]: _removed, ...rest } = images;
         return rest;
@@ -238,6 +289,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     setPreviewProductId("");
     setProductQuantities({});
     setProductFinishes({});
+    setProductColors({});
     setAiMockupImages({});
   }, []);
 
@@ -273,6 +325,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       selectedProducts.map((item) => {
         const qty = getProductQuantity(item.id);
         const itemFinish = getProductFinish(item.id);
+        const itemColor = getProductColor(item.id);
         const unit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
         return {
           name: item.name,
@@ -281,11 +334,12 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           unitPrice: unit,
           totalPrice: +(unit * qty).toFixed(2),
           finishLabel: FINISH_LABELS[itemFinish].label,
+          colorLabel: getProductColorLabel(itemColor),
           finish: itemFinish,
           aiBaseImage: aiMockupImages[item.id] ?? null,
         };
       }),
-    [selectedProducts, getProductQuantity, getProductFinish, aiMockupImages],
+    [selectedProducts, getProductQuantity, getProductFinish, getProductColor, aiMockupImages],
   );
 
   const offerFinishSummary = useMemo(() => {
@@ -312,6 +366,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       lineItems: selectedProducts.map((item) => {
         const qty = getProductQuantity(item.id);
         const itemFinish = getProductFinish(item.id);
+        const itemColor = getProductColor(item.id);
         const unit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
         return {
           name: item.name,
@@ -320,6 +375,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           unitPrice: unit,
           totalPrice: +(unit * qty).toFixed(2),
           finishLabel: FINISH_LABELS[itemFinish].label,
+          colorLabel: getProductColorLabel(itemColor),
           finish: itemFinish,
           aiBaseImage: aiMockupImages[item.id] ?? null,
         };
@@ -338,6 +394,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       selectedProducts,
       getProductQuantity,
       getProductFinish,
+      getProductColor,
       aiMockupImages,
       offerGrandTotal,
     ],
@@ -398,8 +455,9 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     if (hasProductDetails) {
       selectedProducts.forEach((item) => {
         const itemFinish = getProductFinish(item.id);
+        const itemColor = getProductColor(item.id);
         lines.push(
-          `- ${item.name}: ${getProductQuantity(item.id)} buc., ${FINISH_LABELS[itemFinish].label}`,
+          `- ${item.name}: ${getProductQuantity(item.id)} buc., ${FINISH_LABELS[itemFinish].label}, ${getProductColorLabel(itemColor)}`,
         );
       });
       lines.push(`Total estimat: ${offerGrandTotal} RON`);
@@ -435,6 +493,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
           name: item.name,
           quantity: getProductQuantity(item.id),
           finish: itemFinish,
+          color: getProductColor(item.id),
           unitPrice: +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2),
         };
       }),
@@ -503,9 +562,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               <ul className="list-disc pl-5 space-y-1">
                 {selectedProducts.map((item) => {
                   const itemFinish = getProductFinish(item.id);
+                  const itemColor = getProductColor(item.id);
                   return (
                     <li key={item.id}>
-                      {item.name}: {getProductQuantity(item.id)} buc., {FINISH_LABELS[itemFinish].label}
+                      {item.name}: {getProductQuantity(item.id)} buc., {FINISH_LABELS[itemFinish].label}, {getProductColorLabel(itemColor)}
                     </li>
                   );
                 })}
@@ -571,7 +631,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
       <section className="space-y-4">
         <div className="flex flex-wrap items-start gap-2 text-foreground font-semibold text-lg">
           <Package className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <span className="min-w-0 break-words">2. Alege produsele și finisajul <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
+          <span className="min-w-0 break-words">2. Alege produsele, finisajul și culoarea <span className="text-sm font-normal text-muted-foreground">(opțional)</span></span>
         </div>
 
         {selectedCategory && (
@@ -680,12 +740,20 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                   Aplică
                 </Button>
               </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">Culoare:</span>
+                <ProductColorPicker value={bulkColor} onChange={setBulkColor} />
+                <Button type="button" variant="secondary" size="sm" onClick={applyBulkColor} className="shrink-0">
+                  Aplică
+                </Button>
+              </div>
             </div>
           </div>
           <ul className="space-y-2">
             {selectedProducts.map((item) => {
               const qty = getProductQuantity(item.id);
               const itemFinish = getProductFinish(item.id);
+              const itemColor = getProductColor(item.id);
               const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
               const isPreview = previewProductId === item.id;
               return (
@@ -718,7 +786,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                     </button>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-border/60 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-3 pt-3 border-t border-border/60 grid gap-3 sm:grid-cols-3">
                     <div className="min-w-0 space-y-1.5">
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                         Finisaj
@@ -727,6 +795,15 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                         value={itemFinish}
                         onChange={(f) => setProductFinish(item.id, f)}
                         compact
+                      />
+                    </div>
+                    <div className="min-w-0 space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Culoare produs
+                      </p>
+                      <ProductColorPicker
+                        value={itemColor}
+                        onChange={(c) => setProductColor(item.id, c)}
                       />
                     </div>
                     <div className="min-w-0 space-y-1.5">
@@ -756,7 +833,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             })}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Setează cantitatea și finisajul separat pentru fiecare produs (ex: pix Basic, cană Standard, carte Premium).
+            Setează cantitatea, finisajul și culoarea separat pentru fiecare produs (ex: tricou Standard roșu, cană Premium albă).
           </p>
         </Card>
       )}
@@ -826,6 +903,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
             <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Estimare per produs</p>
             {selectedProducts.map((item) => {
               const itemFinish = getProductFinish(item.id);
+              const itemColor = getProductColor(item.id);
               const lineUnit = +(item.basePrice * FINISH_MULTIPLIERS[itemFinish]).toFixed(2);
               const qty = getProductQuantity(item.id);
               const lineTotal = +(lineUnit * qty).toFixed(2);
@@ -833,7 +911,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                 <div key={item.id} className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-3 text-sm min-w-0">
                   <span className="text-muted-foreground break-words min-w-0">
                     {item.name}
-                    <span className="text-xs"> ({item.category}) · {FINISH_LABELS[itemFinish].label}</span>
+                    <span className="text-xs"> ({item.category}) · {FINISH_LABELS[itemFinish].label} · {getProductColorLabel(itemColor)}</span>
                   </span>
                   <span className="shrink-0 font-medium text-foreground">
                     {qty} × {lineUnit} = {lineTotal} RON
@@ -861,6 +939,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
               <AllProductsMockupPreview
                 products={selectedProducts.map((p) => ({ id: p.id, name: p.name, category: p.category }))}
                 getFinish={getProductFinish}
+                getColor={getProductColor}
                 customType={customType}
                 customText={customText}
                 imagePreview={imagePreview}
@@ -882,6 +961,7 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
                   customText={customText}
                   imagePreview={imagePreview}
                   finish={getProductFinish(item.id)}
+                  productColor={getProductColor(item.id)}
                   aiBaseImage={getAiMockupImage(item.id)}
                   onAiBaseImageChange={(image) => setAiMockupImage(item.id, image)}
                   triggerLabel={`Preview mockup: ${item.name}`}

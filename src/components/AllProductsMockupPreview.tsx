@@ -7,12 +7,14 @@ import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 import { generateAiMockup } from "@/lib/generateAiMockup";
 import { FINISH_META, type Finish } from "@/lib/finishOptions";
+import { getProductColorLabel, type ProductColorId } from "@/lib/productColors";
 import {
   getOverlayPerspective,
   OVERLAY_IMAGE_STYLE,
   OVERLAY_TEXT_STYLE,
   OVERLAY_IMAGE_DEDICATED_STYLE,
   OVERLAY_TEXT_DEDICATED_STYLE,
+  OVERLAY_FONT_SIZE_CSS,
 } from "@/lib/mockupOverlay";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig } from "@/config/siteConfig";
@@ -26,6 +28,7 @@ interface ProductItem {
 interface AllProductsMockupPreviewProps {
   products: ProductItem[];
   getFinish: (productId: string) => Finish;
+  getColor: (productId: string) => ProductColorId;
   customType: "text" | "image";
   customText: string;
   imagePreview: string | null;
@@ -37,6 +40,7 @@ function ProductMockupTile({
   productName,
   productCategory,
   finish,
+  productColor,
   customType,
   displayText,
   displayImage,
@@ -47,6 +51,7 @@ function ProductMockupTile({
   productName: string;
   productCategory: string;
   finish: Finish;
+  productColor: ProductColorId;
   customType: "text" | "image";
   displayText: string;
   displayImage: string | null;
@@ -57,17 +62,10 @@ function ProductMockupTile({
   const mockup = getMockupForProduct(productName, productCategory, finish);
   const meta = FINISH_META[finish];
   const usesDedicated = !!mockupImage && mockupImage.startsWith("data:");
-  const perspective = usesDedicated
-    ? { cssTransform: "" }
-    : getOverlayPerspective(mockup.mockupKey);
+  const perspective = getOverlayPerspective(mockup.mockupKey);
   const image = mockupImage || mockup.image;
-
-  const getFontSize = () => {
-    const len = displayText.length;
-    if (len > 20) return 9;
-    if (len > 12) return 11;
-    return 13;
-  };
+  const textStyle = usesDedicated ? OVERLAY_TEXT_DEDICATED_STYLE : OVERLAY_TEXT_STYLE;
+  const imageStyle = usesDedicated ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE;
 
   return (
     <div className="rounded-xl border border-border bg-white p-3 space-y-2">
@@ -76,6 +74,7 @@ function ProductMockupTile({
         <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.badge}`}>
           {meta.label}
         </span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">{getProductColorLabel(productColor)}</span>
       </div>
 
       {loading ? (
@@ -97,13 +96,14 @@ function ProductMockupTile({
               height: mockup.printArea.height,
               transform: perspective.cssTransform || undefined,
               transformOrigin: "center center",
+              containerType: "size",
             }}
           >
             {customType === "text" ? (
               <p
                 style={{
-                  ...(usesDedicated ? OVERLAY_TEXT_DEDICATED_STYLE : OVERLAY_TEXT_STYLE),
-                  fontSize: getFontSize(),
+                  ...textStyle,
+                  fontSize: OVERLAY_FONT_SIZE_CSS,
                 }}
               >
                 {displayText}
@@ -113,7 +113,7 @@ function ProductMockupTile({
                 <img
                   src={displayImage}
                   alt="Personalizare"
-                  style={usesDedicated ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE}
+                  style={imageStyle}
                   crossOrigin="anonymous"
                 />
               )
@@ -128,6 +128,7 @@ function ProductMockupTile({
 export default function AllProductsMockupPreview({
   products,
   getFinish,
+  getColor,
   customType,
   customText,
   imagePreview,
@@ -146,6 +147,7 @@ export default function AllProductsMockupPreview({
     async (product: ProductItem) => {
       if (getAiMockupImage(product.id) || generatingIds.has(product.id)) return;
       const finish = getFinish(product.id);
+      const productColor = getColor(product.id);
       const mockup = getMockupForProduct(product.name, product.category, finish);
 
       setGeneratingIds((prev) => new Set(prev).add(product.id));
@@ -160,6 +162,7 @@ export default function AllProductsMockupPreview({
           productCategory: product.category,
           mockupKey: mockup.mockupKey,
           finish,
+          productColor,
           aiDescription: mockup.aiDescription,
         });
         setAiMockupImage(product.id, result.imageDataUrl);
@@ -174,7 +177,7 @@ export default function AllProductsMockupPreview({
         });
       }
     },
-    [getFinish, getAiMockupImage, setAiMockupImage, generatingIds],
+    [getFinish, getColor, getAiMockupImage, setAiMockupImage, generatingIds],
   );
 
   useEffect(() => {
@@ -223,6 +226,7 @@ export default function AllProductsMockupPreview({
                 productName={product.name}
                 productCategory={product.category}
                 finish={getFinish(product.id)}
+                productColor={getColor(product.id)}
                 customType={customType}
                 displayText={displayText}
                 displayImage={displayImage}

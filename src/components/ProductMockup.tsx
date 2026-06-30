@@ -11,12 +11,14 @@ import { renderProductMockupCanvas } from "@/lib/renderProductMockupCanvas";
 import { openProductMockupPreview } from "@/lib/openProductMockupPreview";
 import { generateAiMockup } from "@/lib/generateAiMockup";
 import { FINISH_META, type Finish } from "@/lib/finishOptions";
+import { getProductColorLabel, type ProductColorId } from "@/lib/productColors";
 import {
   getOverlayPerspective,
   OVERLAY_IMAGE_STYLE,
   OVERLAY_TEXT_STYLE,
   OVERLAY_IMAGE_DEDICATED_STYLE,
   OVERLAY_TEXT_DEDICATED_STYLE,
+  OVERLAY_FONT_SIZE_CSS,
 } from "@/lib/mockupOverlay";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig } from "@/config/siteConfig";
@@ -28,6 +30,7 @@ interface ProductMockupProps {
   customText: string;
   imagePreview: string | null;
   finish: Finish;
+  productColor: ProductColorId;
   triggerLabel?: string;
   aiBaseImage?: string | null;
   onAiBaseImageChange?: (image: string | null) => void;
@@ -55,24 +58,9 @@ function SingleMockupPreview({
   usesDedicatedFinishImage?: boolean;
 }) {
   const meta = FINISH_META[finish];
-  const perspective = usesDedicatedFinishImage
-    ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
-    : getOverlayPerspective(mockupKey);
-
-  const getFontSize = () => {
-    const len = displayText.length;
-    if (usesDedicatedFinishImage) {
-      if (len > 20) return 14;
-      if (len > 12) return 16;
-      if (len > 6) return 20;
-      return 24;
-    }
-    if (len > 30) return 10;
-    if (len > 20) return 12;
-    if (len > 12) return 14;
-    if (len > 6) return 18;
-    return 22;
-  };
+  const perspective = getOverlayPerspective(mockupKey);
+  const textStyle = usesDedicatedFinishImage ? OVERLAY_TEXT_DEDICATED_STYLE : OVERLAY_TEXT_STYLE;
+  const imageStyle = usesDedicatedFinishImage ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE;
 
   return (
     <div className="mx-auto w-full max-w-md">
@@ -97,13 +85,14 @@ function SingleMockupPreview({
             height: printArea.height,
             transform: perspective.cssTransform || undefined,
             transformOrigin: "center center",
+            containerType: "size",
           }}
         >
           {customType === "text" ? (
             <p
               style={{
-                ...(usesDedicatedFinishImage ? OVERLAY_TEXT_DEDICATED_STYLE : OVERLAY_TEXT_STYLE),
-                fontSize: getFontSize(),
+                ...textStyle,
+                fontSize: OVERLAY_FONT_SIZE_CSS,
               }}
             >
               {displayText}
@@ -113,7 +102,7 @@ function SingleMockupPreview({
               <img
                 src={displayImage}
                 alt="Personalizare"
-                style={usesDedicatedFinishImage ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE}
+                style={imageStyle}
                 crossOrigin="anonymous"
               />
             )
@@ -131,6 +120,7 @@ export default function ProductMockup({
   customText,
   imagePreview,
   finish,
+  productColor,
   triggerLabel,
   aiBaseImage,
   onAiBaseImageChange,
@@ -155,6 +145,7 @@ export default function ProductMockup({
         productCategory,
         mockupKey: mockup.mockupKey,
         finish,
+        productColor,
         aiDescription: mockup.aiDescription,
       });
       onAiBaseImageChange?.(result.imageDataUrl);
@@ -171,6 +162,7 @@ export default function ProductMockup({
     mockup.mockupKey,
     mockup.aiDescription,
     finish,
+    productColor,
     onAiBaseImageChange,
     generatingAi,
   ]);
@@ -281,7 +273,7 @@ export default function ProductMockup({
         <div className="overflow-y-auto max-h-[90dvh] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg text-left">
-              {productName} — {FINISH_META[finish].label}
+              {productName} — {FINISH_META[finish].label} · {getProductColorLabel(productColor)}
             </DialogTitle>
           </DialogHeader>
 

@@ -7,6 +7,7 @@ interface GenerateMockupBody {
   productCategory?: string;
   mockupKey?: string;
   finish?: Finish;
+  productColor?: string;
   recaptchaToken?: string;
   aiDescription?: string;
 }
@@ -49,6 +50,31 @@ const MOCKUP_PRODUCT_DESC: Record<string, string> = {
 };
 
 const DEFAULT_IMAGE_MODEL = "gpt-image-1-mini";
+
+const COLOR_AI_NAMES: Record<string, string> = {
+  white: "white",
+  black: "black",
+  navy: "navy blue",
+  blue: "royal blue",
+  red: "red",
+  green: "green",
+  yellow: "yellow",
+  orange: "orange",
+  purple: "purple",
+  gray: "gray",
+  pink: "pink",
+  natural: "natural beige",
+};
+
+function colorizeDescription(description: string, colorKey: string): string {
+  const aiName = COLOR_AI_NAMES[colorKey];
+  if (!aiName || colorKey === "white") return description;
+  return description
+    .replace(/\bwhite\b/gi, aiName)
+    .replace(/\bnatural cotton\b/gi, `${aiName} cotton`)
+    .replace(/\bnatural\b/gi, aiName)
+    .replace(/\bclear glass\b/gi, `clear glass with ${aiName} lid`);
+}
 
 function getImageModel(): string {
   return process.env.OPENAI_IMAGE_MODEL?.trim() || DEFAULT_IMAGE_MODEL;
@@ -105,11 +131,13 @@ function buildAiMockupPrompt(
   mockupKey: string,
   finish: Finish,
   aiDescription?: string,
+  productColor?: string,
 ): string {
-  const product =
+  const rawProduct =
     aiDescription?.trim() ||
     MOCKUP_PRODUCT_DESC[mockupKey] ||
     `a promotional ${productName}`;
+  const product = colorizeDescription(rawProduct, productColor?.trim() || "white");
   const tier = FINISH_PROMPT[finish];
 
   return [
@@ -219,7 +247,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: recaptcha.error });
     }
 
-    const prompt = buildAiMockupPrompt(productName, mockupKey, finish, body.aiDescription);
+    const prompt = buildAiMockupPrompt(
+      productName,
+      mockupKey,
+      finish,
+      body.aiDescription,
+      body.productColor,
+    );
 
     const imageBuffer = await generateOpenAiImage(apiKey, prompt, finish);
     const imageDataUrl = `data:image/png;base64,${imageBuffer.toString("base64")}`;

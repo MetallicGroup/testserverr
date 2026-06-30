@@ -45,10 +45,36 @@ const PERSPECTIVE_BY_KEY: Record<string, Partial<OverlayPerspective>> = {
   polo: { cssTransform: "perspective(900px) rotateX(2deg)", rotate: 0, scaleY: 1, skewX: 0 },
   hoodie: { cssTransform: "perspective(900px) rotateX(2deg)", rotate: 0, scaleY: 1, skewX: 0 },
   totebag: { cssTransform: "perspective(750px) rotateX(3deg)", rotate: 0, scaleY: 0.98, skewX: 0 },
+  carmount: {
+    cssTransform: "perspective(520px) rotateX(22deg) rotateY(-6deg)",
+    rotate: 0.06,
+    scaleY: 0.78,
+    skewX: -0.04,
+  },
+  phonestand: {
+    cssTransform: "perspective(480px) rotateX(16deg) rotateY(-8deg)",
+    rotate: 0.05,
+    scaleY: 0.84,
+    skewX: -0.06,
+  },
+  headphones: { cssTransform: "perspective(500px) rotateY(-10deg) rotateX(6deg)", rotate: -0.05, scaleY: 0.9, skewX: -0.08 },
+  mouse: { cssTransform: "perspective(700px) rotateX(20deg)", rotate: 0.04, scaleY: 0.8, skewX: 0 },
+  speaker: { cssTransform: "perspective(450px) rotateY(-10deg) rotateX(5deg)", rotate: -0.05, scaleY: 0.9, skewX: -0.08 },
+  carcharger: { cssTransform: "perspective(400px) rotateY(-14deg) rotateX(4deg)", rotate: -0.08, scaleY: 0.9, skewX: -0.1 },
+  airfreshener: { cssTransform: "perspective(450px) rotateY(-8deg)", rotate: -0.04, scaleY: 0.94, skewX: -0.06 },
 };
 
 export function getOverlayPerspective(mockupKey: string): OverlayPerspective {
   return { ...DEFAULT_PERSPECTIVE, ...PERSPECTIVE_BY_KEY[mockupKey] };
+}
+
+/** Font size relative to the print-area container (use with containerType: size). */
+export const OVERLAY_FONT_SIZE_CSS = "clamp(7px, min(24cqh, 14cqw), 40px)";
+
+export function computeOverlayFontSizePx(areaW: number, areaH: number, textLen: number): number {
+  const maxByHeight = areaH * 0.34;
+  const maxByWidth = areaW / Math.max(textLen * 0.62, 2.8);
+  return Math.max(8, Math.min(maxByHeight, maxByWidth, 44));
 }
 
 export const OVERLAY_TEXT_STYLE: CSSProperties = {
@@ -122,11 +148,8 @@ export function drawMockupText(
   areaW: number,
   areaH: number,
   mockupKey: string,
-  flatOverlay = false,
 ): void {
-  const perspective = flatOverlay
-    ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
-    : getOverlayPerspective(mockupKey);
+  const perspective = getOverlayPerspective(mockupKey);
   const cx = left + areaW / 2;
   const cy = top + areaH / 2;
 
@@ -137,7 +160,7 @@ export function drawMockupText(
 
   applyCanvasPerspective(ctx, cx, cy, perspective);
 
-  let fontSize = Math.min(areaH * 0.5, widthScaledFont(areaW, text.length));
+  let fontSize = computeOverlayFontSizePx(areaW, areaH, text.length);
   ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -163,14 +186,6 @@ export function drawMockupText(
   ctx.restore();
 }
 
-function widthScaledFont(areaW: number, textLen: number): number {
-  const base = Math.min(areaW * 0.22, 64);
-  if (textLen > 24) return base * 0.55;
-  if (textLen > 14) return base * 0.7;
-  if (textLen > 8) return base * 0.85;
-  return base;
-}
-
 export function drawMockupImage(
   ctx: CanvasRenderingContext2D,
   overlay: HTMLImageElement,
@@ -179,11 +194,8 @@ export function drawMockupImage(
   areaW: number,
   areaH: number,
   mockupKey: string,
-  flatOverlay = false,
 ): void {
-  const perspective = flatOverlay
-    ? { cssTransform: "", rotate: 0, scaleY: 1, skewX: 0 }
-    : getOverlayPerspective(mockupKey);
+  const perspective = getOverlayPerspective(mockupKey);
   const cx = left + areaW / 2;
   const cy = top + areaH / 2;
   const scale = Math.min((areaW * 0.88) / overlay.width, (areaH * 0.88) / overlay.height);

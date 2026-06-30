@@ -93,11 +93,11 @@ export async function renderProductMockupCanvas(
 
   if (customType === "text") {
     const text = customText.trim() || "Avozenevo";
-    drawMockupText(ctx, text, left, top, areaW, areaH, mockup.mockupKey, mockup.usesDedicatedFinishImage);
+    drawMockupText(ctx, text, left, top, areaW, areaH, mockup.mockupKey);
   } else {
     const overlaySrc = imagePreview || avozenevoLogo;
     const overlay = await loadImage(overlaySrc);
-    drawMockupImage(ctx, overlay, left, top, areaW, areaH, mockup.mockupKey, mockup.usesDedicatedFinishImage);
+    drawMockupImage(ctx, overlay, left, top, areaW, areaH, mockup.mockupKey);
   }
 
   return canvas.toDataURL("image/png");
