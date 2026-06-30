@@ -9,20 +9,33 @@ export interface GenerateAiMockupInput {
   finish: Finish;
   productColor?: ProductColorId;
   aiDescription?: string;
+  customType?: "text" | "image";
+  customText?: string;
 }
 
 export interface GenerateAiMockupResult {
   imageDataUrl: string;
   prompt: string;
+  brandingInImage?: boolean;
 }
 
-async function parseApiResponse(response: Response): Promise<{ error?: string; imageDataUrl?: string; prompt?: string }> {
+async function parseApiResponse(response: Response): Promise<{
+  error?: string;
+  imageDataUrl?: string;
+  prompt?: string;
+  brandingInImage?: boolean;
+}> {
   const text = await response.text();
   if (!text) {
     throw new Error("Serverul AI nu a răspuns. Încearcă din nou.");
   }
   try {
-    return JSON.parse(text) as { error?: string; imageDataUrl?: string; prompt?: string };
+    return JSON.parse(text) as {
+      error?: string;
+      imageDataUrl?: string;
+      prompt?: string;
+      brandingInImage?: boolean;
+    };
   } catch {
     throw new Error(
       response.ok
@@ -65,5 +78,6 @@ export async function generateAiMockup(
   return {
     imageDataUrl: payload.imageDataUrl,
     prompt: payload.prompt ?? "",
+    brandingInImage: payload.brandingInImage ?? false,
   };
 }

@@ -123,6 +123,10 @@ export default function OrderForm({ preselectedProductId }: OrderFormProps) {
     }
   }, [preselectedProductId, products]);
 
+  useEffect(() => {
+    setAiMockupImages({});
+  }, [customType, customText, imagePreview]);
+
   const getProductQuantity = useCallback(
     (productId: string) => productQuantities[productId] ?? DEFAULT_PRODUCT_QUANTITY,
     [productQuantities],

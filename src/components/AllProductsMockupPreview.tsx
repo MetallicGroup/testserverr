@@ -18,6 +18,7 @@ import {
 } from "@/lib/mockupOverlay";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig } from "@/config/siteConfig";
+import { prepareLogoForOverlay } from "@/lib/prepareLogoOverlay";
 
 interface ProductItem {
   id: string;
@@ -47,6 +48,7 @@ function ProductMockupTile({
   mockupImage,
   loading,
   error,
+  skipOverlay,
 }: {
   productName: string;
   productCategory: string;
@@ -58,6 +60,7 @@ function ProductMockupTile({
   mockupImage: string | null;
   loading: boolean;
   error?: string;
+  skipOverlay?: boolean;
 }) {
   const mockup = getMockupForProduct(productName, productCategory, finish);
   const meta = FINISH_META[finish];
@@ -66,6 +69,21 @@ function ProductMockupTile({
   const image = mockupImage || mockup.image;
   const textStyle = usesDedicated ? OVERLAY_TEXT_DEDICATED_STYLE : OVERLAY_TEXT_STYLE;
   const imageStyle = usesDedicated ? OVERLAY_IMAGE_DEDICATED_STYLE : OVERLAY_IMAGE_STYLE;
+  const [preparedLogo, setPreparedLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (skipOverlay || customType !== "image" || !displayImage) {
+      setPreparedLogo(null);
+      return;
+    }
+    let cancelled = false;
+    void prepareLogoForOverlay(displayImage).then((src) => {
+      if (!cancelled) setPreparedLogo(src);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [skipOverlay, customType, displayImage]);
 
   return (
     <div className="rounded-xl border border-border bg-white p-3 space-y-2">
@@ -87,6 +105,7 @@ function ProductMockupTile({
       ) : (
         <div className="relative mx-auto w-full max-w-[200px] [isolation:isolate]">
           <img src={image} alt={productName} className="w-full h-auto object-contain" crossOrigin="anonymous" />
+          {!skipOverlay ? (
           <div
             className="absolute flex items-center justify-center overflow-hidden"
             style={{
@@ -109,9 +128,9 @@ function ProductMockupTile({
                 {displayText}
               </p>
             ) : (
-              displayImage && (
+              (preparedLogo || displayImage) && (
                 <img
-                  src={displayImage}
+                  src={preparedLogo || displayImage || ""}
                   alt="Personalizare"
                   style={imageStyle}
                   crossOrigin="anonymous"
@@ -119,6 +138,7 @@ function ProductMockupTile({
               )
             )}
           </div>
+          ) : null}
         </div>
       )}
     </div>
@@ -138,6 +158,7 @@ export default function AllProductsMockupPreview({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [brandingByProduct, setBrandingByProduct] = useState<Record<string, boolean>>({});
   const batchStartedRef = useRef(false);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
@@ -164,8 +185,13 @@ export default function AllProductsMockupPreview({
           finish,
           productColor,
           aiDescription: mockup.aiDescription,
+          customType,
+          customText,
         });
         setAiMockupImage(product.id, result.imageDataUrl);
+        if (result.brandingInImage) {
+          setBrandingByProduct((prev) => ({ ...prev, [product.id]: true }));
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Generarea a eșuat.";
         setErrors((prev) => ({ ...prev, [product.id]: message }));
@@ -177,7 +203,7 @@ export default function AllProductsMockupPreview({
         });
       }
     },
-    [getFinish, getColor, getAiMockupImage, setAiMockupImage, generatingIds],
+    [getFinish, getColor, getAiMockupImage, setAiMockupImage, generatingIds, customType, customText],
   );
 
   useEffect(() => {
@@ -233,6 +259,7 @@ export default function AllProductsMockupPreview({
                 mockupImage={getAiMockupImage(product.id)}
                 loading={generatingIds.has(product.id)}
                 error={errors[product.id]}
+                skipOverlay={brandingByProduct[product.id]}
               />
             ))}
           </div>

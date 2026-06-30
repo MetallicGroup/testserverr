@@ -103,17 +103,25 @@ export const OVERLAY_TEXT_STYLE: CSSProperties = {
 };
 
 export const OVERLAY_IMAGE_STYLE: CSSProperties = {
-  maxWidth: "82%",
-  maxHeight: "82%",
+  maxWidth: "92%",
+  maxHeight: "92%",
   width: "auto",
   height: "auto",
   objectFit: "contain",
-  mixBlendMode: "multiply",
-  opacity: 0.9,
-  filter: "contrast(1.05) saturate(0.95)",
+  opacity: 0.95,
+  filter: "contrast(1.08)",
 };
 
-/** Flatter overlay for dedicated finish photos (already studio-shot). */
+export const OVERLAY_IMAGE_DEDICATED_STYLE: CSSProperties = {
+  maxWidth: "92%",
+  maxHeight: "92%",
+  width: "auto",
+  height: "auto",
+  objectFit: "contain",
+  opacity: 0.95,
+  filter: "contrast(1.1)",
+};
+
 export const OVERLAY_TEXT_DEDICATED_STYLE: CSSProperties = {
   color: "#1f1f28",
   fontWeight: 700,
@@ -125,17 +133,6 @@ export const OVERLAY_TEXT_DEDICATED_STYLE: CSSProperties = {
   mixBlendMode: "multiply",
   opacity: 0.92,
   textShadow: "0 1px 1px rgba(255,255,255,0.35)",
-};
-
-export const OVERLAY_IMAGE_DEDICATED_STYLE: CSSProperties = {
-  maxWidth: "80%",
-  maxHeight: "80%",
-  width: "auto",
-  height: "auto",
-  objectFit: "contain",
-  mixBlendMode: "multiply",
-  opacity: 0.88,
-  filter: "contrast(1.08)",
 };
 
 function applyCanvasPerspective(
@@ -214,7 +211,7 @@ export function drawMockupImage(
   const perspective = getOverlayPerspective(mockupKey);
   const cx = left + areaW / 2;
   const cy = top + areaH / 2;
-  const scale = Math.min((areaW * 0.8) / overlay.width, (areaH * 0.8) / overlay.height);
+  const scale = Math.min((areaW * 0.92) / overlay.width, (areaH * 0.92) / overlay.height);
   const w = overlay.width * scale;
   const h = overlay.height * scale;
   const dx = left + (areaW - w) / 2;
@@ -227,8 +224,7 @@ export function drawMockupImage(
 
   applyCanvasPerspective(ctx, cx, cy, perspective);
 
-  ctx.globalCompositeOperation = "multiply";
-  ctx.globalAlpha = 0.9;
+  ctx.globalAlpha = 0.95;
   ctx.drawImage(overlay, dx, dy, w, h);
 
   ctx.restore();

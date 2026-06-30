@@ -2,6 +2,7 @@ import avozenevoLogo from "@/assets/avozenevo-logo.png";
 import { getMockupForProduct } from "@/data/mockupImages";
 import { FINISH_CANVAS_EFFECTS, type Finish } from "@/lib/finishOptions";
 import { drawMockupImage, drawMockupText } from "@/lib/mockupOverlay";
+import { prepareLogoForOverlay } from "@/lib/prepareLogoOverlay";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -63,6 +64,7 @@ export async function renderProductMockupCanvas(
   imagePreview: string | null,
   finish: Finish = "medium",
   customBaseImage?: string | null,
+  brandingInImage = false,
 ): Promise<string> {
   const mockup = getMockupForProduct(productName, productCategory, finish);
   const productImg = await loadImage(customBaseImage || mockup.image);
@@ -91,12 +93,17 @@ export async function renderProductMockupCanvas(
   const areaW = parsePercent(mockup.printArea.width) * width;
   const areaH = parsePercent(mockup.printArea.height) * height;
 
+  if (brandingInImage) {
+    return canvas.toDataURL("image/png");
+  }
+
   if (customType === "text") {
     const text = customText.trim() || "Avozenevo";
     drawMockupText(ctx, text, left, top, areaW, areaH, mockup.mockupKey);
   } else {
     const overlaySrc = imagePreview || avozenevoLogo;
-    const overlay = await loadImage(overlaySrc);
+    const preparedSrc = await prepareLogoForOverlay(overlaySrc);
+    const overlay = await loadImage(preparedSrc);
     drawMockupImage(ctx, overlay, left, top, areaW, areaH, mockup.mockupKey);
   }
 

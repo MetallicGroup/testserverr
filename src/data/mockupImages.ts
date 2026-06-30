@@ -127,7 +127,7 @@ const PRINT_AREAS: Record<string, PrintArea> = {
   sticky: { top: "30%", left: "20%", width: "60%", height: "40%" },
   box: { top: "35%", left: "18%", width: "50%", height: "30%" },
   chocolatebox: { top: "26%", left: "30%", width: "40%", height: "22%" },
-  winegift: { top: "37%", left: "18%", width: "14%", height: "26%" },
+  winegift: { top: "35%", left: "26%", width: "17%", height: "24%" },
   penholder: { top: "18%", left: "28%", width: "44%", height: "35%" },
   ruler: { top: "40%", left: "10%", width: "80%", height: "18%" },
   headphones: { top: "22%", left: "18%", width: "64%", height: "40%" },

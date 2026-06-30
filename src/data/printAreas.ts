@@ -8,7 +8,7 @@ export interface PrintArea {
 
 /** Per-product overrides — when mockup-key defaults are too generic for the composition. */
 export const PRODUCT_PRINT_AREAS: Record<string, PrintArea> = {
-  "Seturi de vin personalizate": { top: "37%", left: "18%", width: "14%", height: "26%" },
+  "Seturi de vin personalizate": { top: "35%", left: "26%", width: "17%", height: "24%" },
   "Cutii de ciocolată cu logo": { top: "26%", left: "30%", width: "40%", height: "22%" },
   "Borcane personalizate": { top: "34%", left: "28%", width: "22%", height: "28%" },
   "Seturi cadou personalizate": { top: "28%", left: "28%", width: "44%", height: "26%" },
@@ -37,7 +37,7 @@ export const PRODUCT_PRINT_AREAS: Record<string, PrintArea> = {
 
 /** Default print zones per mockup family (tuned for typical AI composition). */
 export const MOCKUP_KEY_PRINT_AREAS: Record<string, PrintArea> = {
-  winegift: { top: "37%", left: "18%", width: "14%", height: "26%" },
+  winegift: { top: "35%", left: "26%", width: "17%", height: "24%" },
   chocolatebox: { top: "26%", left: "30%", width: "40%", height: "22%" },
   carmount: { top: "9%", left: "36%", width: "28%", height: "15%" },
   phonestand: { top: "14%", left: "30%", width: "40%", height: "22%" },

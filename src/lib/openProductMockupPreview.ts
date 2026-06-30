@@ -86,6 +86,7 @@ export async function openProductMockupPreview(
   imagePreview: string | null,
   finish: Finish,
   customBaseImage?: string | null,
+  brandingInImage = false,
 ): Promise<void> {
   const finishLabel = FINISH_LABELS[finish].label;
 
@@ -106,6 +107,7 @@ export async function openProductMockupPreview(
       imagePreview,
       finish,
       customBaseImage,
+      brandingInImage,
     );
     showPreviewImage(previewWindow, imageDataUrl);
   } catch (error) {

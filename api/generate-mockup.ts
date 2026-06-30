@@ -8,6 +8,8 @@ interface GenerateMockupBody {
   mockupKey?: string;
   finish?: Finish;
   productColor?: string;
+  customType?: "text" | "image";
+  customText?: string;
   recaptchaToken?: string;
   aiDescription?: string;
 }
@@ -95,6 +97,28 @@ const BRANDING_SURFACE_PROMPT: Record<string, string> = {
     "One clear blank smooth print area on the primary front branding surface, facing the camera.",
 };
 
+const TEXT_ON_SURFACE: Record<string, string> = {
+  winegift: "on the wine bottle front white label, centered on the label",
+  bottle: "on the front wrap-around label of the bottle, centered",
+  mug: "on the front face of the mug, centered",
+  tshirt: "on the chest area of the t-shirt, centered",
+  polo: "on the chest area of the polo shirt, centered",
+  hoodie: "on the chest area of the hoodie, centered",
+  cap: "on the front panel of the cap, centered",
+  pen: "on the barrel of the pen, centered",
+  notebook: "on the front cover, centered",
+  chocolatebox: "on the top lid of the box, centered",
+  box: "on the front or top of the box, centered",
+  carmount: "on the flat front face of the phone mount plate, centered",
+  phonestand: "on the front face of the phone stand, centered",
+  usb: "on the flat side of the USB drive, centered",
+  powerbank: "on the front panel of the powerbank, centered",
+  mousepad: "on the top surface of the mouse pad, centered",
+  totebag: "on the front of the tote bag, centered",
+  backpack: "on the front pocket of the backpack, centered",
+  generic: "on the main branding surface, centered",
+};
+
 const DEFAULT_IMAGE_MODEL = "gpt-image-1-mini";
 
 const COLOR_AI_NAMES: Record<string, string> = {
@@ -178,7 +202,9 @@ function buildAiMockupPrompt(
   finish: Finish,
   aiDescription?: string,
   productColor?: string,
-): string {
+  customType?: "text" | "image",
+  customText?: string,
+): { prompt: string; brandingInImage: boolean } {
   const rawProduct =
     aiDescription?.trim() ||
     MOCKUP_PRODUCT_DESC[mockupKey] ||
@@ -188,13 +214,30 @@ function buildAiMockupPrompt(
   const brandingSurface =
     BRANDING_SURFACE_PROMPT[mockupKey] ?? BRANDING_SURFACE_PROMPT.generic;
 
-  return [
+  const textValue = customText?.trim();
+  const bakeText = customType === "text" && !!textValue;
+
+  if (bakeText) {
+    const where = TEXT_ON_SURFACE[mockupKey] ?? TEXT_ON_SURFACE.generic;
+    const prompt = [
+      `Professional studio product photograph of ${product}, ${tier}.`,
+      brandingSurface,
+      `The promotional text "${textValue}" is already professionally printed ${where}, dark elegant sans-serif typography, realistic print on the product surface.`,
+      "No watermark, no people, no hands.",
+      "Isolated on pure white background, soft commercial lighting, photorealistic e-commerce mockup.",
+      "Single product centered, subtle natural shadow, high detail.",
+    ].join(" ");
+    return { prompt, brandingInImage: true };
+  }
+
+  const prompt = [
     `Professional studio product photograph of ${product}, ${tier}.`,
     brandingSurface,
     "No text, no logo, no watermark, no people, no hands in the image.",
     "Isolated on pure white background, soft commercial lighting, photorealistic e-commerce mockup.",
     "Single product centered, subtle natural shadow, high detail.",
   ].join(" ");
+  return { prompt, brandingInImage: false };
 }
 
 function parseRequestBody(req: VercelRequest): GenerateMockupBody {
@@ -292,15 +335,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : req.socket?.remoteAddress,
     );
     if (!recaptcha.ok) {
-      return res.status(403).json({ error: recaptcha.error });
+      return res.status(403).json({ error: "recaptcha" in recaptcha ? recaptcha.error : "Verificare eșuată." });
     }
 
-    const prompt = buildAiMockupPrompt(
+    const customType =
+      body.customType === "image" || body.customType === "text" ? body.customType : undefined;
+
+    const { prompt, brandingInImage } = buildAiMockupPrompt(
       productName,
       mockupKey,
       finish,
       body.aiDescription,
       body.productColor,
+      customType,
+      body.customText,
     );
 
     const imageBuffer = await generateOpenAiImage(apiKey, prompt, finish);
@@ -309,6 +357,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       imageDataUrl,
       prompt,
+      brandingInImage,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Eroare necunoscută";

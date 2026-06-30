@@ -22,6 +22,7 @@ import {
 } from "@/lib/mockupOverlay";
 import RecaptchaNotice from "@/components/RecaptchaNotice";
 import { siteConfig } from "@/config/siteConfig";
+import { prepareLogoForOverlay } from "@/lib/prepareLogoOverlay";
 
 interface ProductMockupProps {
   productName: string;
@@ -46,6 +47,8 @@ function SingleMockupPreview({
   displayImage,
   finish,
   usesDedicatedFinishImage,
+  skipOverlay,
+  preparedLogo,
 }: {
   productName: string;
   mockupKey: string;
@@ -56,6 +59,8 @@ function SingleMockupPreview({
   displayImage: string | null;
   finish: Finish;
   usesDedicatedFinishImage?: boolean;
+  skipOverlay?: boolean;
+  preparedLogo?: string | null;
 }) {
   const meta = FINISH_META[finish];
   const perspective = getOverlayPerspective(mockupKey);
@@ -76,6 +81,7 @@ function SingleMockupPreview({
           className="w-full h-auto object-contain"
           crossOrigin="anonymous"
         />
+        {!skipOverlay ? (
         <div
           className="absolute flex items-center justify-center overflow-hidden"
           style={{
@@ -98,9 +104,9 @@ function SingleMockupPreview({
               {displayText}
             </p>
           ) : (
-            displayImage && (
+            (preparedLogo || displayImage) && (
               <img
-                src={displayImage}
+                src={preparedLogo || displayImage || ""}
                 alt="Personalizare"
                 style={imageStyle}
                 crossOrigin="anonymous"
@@ -108,6 +114,7 @@ function SingleMockupPreview({
             )
           )}
         </div>
+        ) : null}
       </div>
     </div>
   );
@@ -129,12 +136,33 @@ export default function ProductMockup({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [openingTab, setOpeningTab] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
+  const [brandingInImage, setBrandingInImage] = useState(false);
+  const [preparedLogo, setPreparedLogo] = useState<string | null>(null);
   const mockup = getMockupForProduct(productName, productCategory, finish);
 
   const displayText = customType === "text" ? (customText.trim() || "avozenevo") : "";
   const displayImage = customType === "image" ? (imagePreview || avozenevoLogo) : null;
   const previewImage = aiBaseImage || mockup.image;
   const usesDedicated = !!aiBaseImage || mockup.usesDedicatedFinishImage;
+  const skipOverlay = brandingInImage;
+
+  useEffect(() => {
+    if (!aiBaseImage) setBrandingInImage(false);
+  }, [aiBaseImage]);
+
+  useEffect(() => {
+    if (customType !== "image" || !displayImage || skipOverlay) {
+      setPreparedLogo(null);
+      return;
+    }
+    let cancelled = false;
+    void prepareLogoForOverlay(displayImage).then((src) => {
+      if (!cancelled) setPreparedLogo(src);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [customType, displayImage, skipOverlay]);
 
   const handleGenerateAi = useCallback(async () => {
     if (generatingAi) return;
@@ -147,8 +175,11 @@ export default function ProductMockup({
         finish,
         productColor,
         aiDescription: mockup.aiDescription,
+        customType,
+        customText,
       });
       onAiBaseImageChange?.(result.imageDataUrl);
+      setBrandingInImage(result.brandingInImage ?? false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Generarea AI a eșuat.";
       toast.error(message);
@@ -163,6 +194,8 @@ export default function ProductMockup({
     mockup.aiDescription,
     finish,
     productColor,
+    customType,
+    customText,
     onAiBaseImageChange,
     generatingAi,
   ]);
@@ -184,6 +217,7 @@ export default function ProductMockup({
         imagePreview,
         finish,
         aiBaseImage,
+        brandingInImage,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Previzualizarea nu a putut fi deschisă.";
@@ -191,7 +225,7 @@ export default function ProductMockup({
     } finally {
       setOpeningTab(false);
     }
-  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
+  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage, brandingInImage]);
 
   const handleDownloadPNG = useCallback(async () => {
     try {
@@ -203,6 +237,7 @@ export default function ProductMockup({
         imagePreview,
         finish,
         aiBaseImage,
+        brandingInImage,
       );
       const link = document.createElement("a");
       link.href = imgData;
@@ -211,7 +246,7 @@ export default function ProductMockup({
     } catch {
       toast.error("Mockup-ul PNG nu a putut fi generat.");
     }
-  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
+  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage, brandingInImage]);
 
   const handleDownloadPDF = useCallback(async () => {
     try {
@@ -223,6 +258,7 @@ export default function ProductMockup({
         imagePreview,
         finish,
         aiBaseImage,
+        brandingInImage,
       );
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pdfW = pdf.internal.pageSize.getWidth();
@@ -255,7 +291,7 @@ export default function ProductMockup({
       pdf.addImage(imgData, "PNG", (pdfW - w) / 2, (pdfH - h) / 2, w, h);
       pdf.save(`mockup-${productName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
     }
-  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage]);
+  }, [productName, productCategory, customType, customText, imagePreview, finish, aiBaseImage, brandingInImage]);
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -299,11 +335,15 @@ export default function ProductMockup({
                 displayImage={displayImage}
                 finish={finish}
                 usesDedicatedFinishImage={usesDedicated}
+                skipOverlay={skipOverlay}
+                preparedLogo={preparedLogo}
               />
               <p className="text-center text-[10px] text-muted-foreground mt-3">
-                {customType === "text"
-                  ? "Textul tău este aplicat pe produs."
-                  : "Logo-ul / imaginea ta este aplicată pe produs."}
+                {skipOverlay
+                  ? "Textul tău este imprimat direct de AI pe produs."
+                  : customType === "text"
+                    ? "Textul tău este aplicat pe produs."
+                    : "Logo-ul este centrat pe zona de branding a produsului."}
               </p>
             </div>
           )}
