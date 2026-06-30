@@ -1,6 +1,7 @@
 // Mockup image configuration
 import type { Finish } from "@/lib/finishOptions";
 import { getProductVisual, type MockupKey } from "@/data/productVisuals";
+import { resolvePrintArea } from "@/data/printAreas";
 
 // Legacy base imports (kept for bundler; new keys use finish-medium fallback)
 import penImg from "@/assets/mockups/pen.png";
@@ -125,8 +126,8 @@ const PRINT_AREAS: Record<string, PrintArea> = {
   paper: { top: "55%", left: "10%", width: "35%", height: "20%" },
   sticky: { top: "30%", left: "20%", width: "60%", height: "40%" },
   box: { top: "35%", left: "18%", width: "50%", height: "30%" },
-  chocolatebox: { top: "32%", left: "20%", width: "60%", height: "30%" },
-  winegift: { top: "30%", left: "18%", width: "64%", height: "38%" },
+  chocolatebox: { top: "26%", left: "30%", width: "40%", height: "22%" },
+  winegift: { top: "37%", left: "18%", width: "14%", height: "26%" },
   penholder: { top: "18%", left: "28%", width: "44%", height: "35%" },
   ruler: { top: "40%", left: "10%", width: "80%", height: "18%" },
   headphones: { top: "22%", left: "18%", width: "64%", height: "40%" },
@@ -202,15 +203,16 @@ export function getMockupForProduct(name: string, category: string, finish?: Fin
   const visual = getProductVisual(name, category);
   const baseKey = visual.mockupKey;
   const config = MOCKUP_IMAGES[baseKey] ?? MOCKUP_IMAGES.generic;
-  const resolvedPrintArea =
+  const basePrintArea =
     finish && config.printAreaByFinish?.[finish] ? config.printAreaByFinish[finish]! : config.printArea;
+  const printArea = resolvePrintArea(name, baseKey, basePrintArea);
 
   if (finish && config.imagesByFinish?.[finish]) {
     return {
       ...config,
       mockupKey: baseKey,
       image: config.imagesByFinish[finish]!,
-      printArea: resolvedPrintArea,
+      printArea,
       usesDedicatedFinishImage: true,
       aiDescription: visual.aiDescription,
     };
@@ -218,7 +220,7 @@ export function getMockupForProduct(name: string, category: string, finish?: Fin
   return {
     ...config,
     mockupKey: baseKey,
-    printArea: resolvedPrintArea,
+    printArea,
     usesDedicatedFinishImage: false,
     aiDescription: visual.aiDescription,
   };

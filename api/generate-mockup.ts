@@ -49,6 +49,52 @@ const MOCKUP_PRODUCT_DESC: Record<string, string> = {
   generic: "a white promotional gift product",
 };
 
+/** Where the AI must leave a blank branding surface (consistent with client overlay zones). */
+const BRANDING_SURFACE_PROMPT: Record<string, string> = {
+  winegift:
+    "The wine bottle on the LEFT has a large blank white rectangular front label — this is the only main branding zone, clearly visible and facing the camera.",
+  chocolatebox:
+    "A blank white rectangular print area centered on the TOP LID of the box, facing the camera.",
+  carmount:
+    "A blank smooth rectangular area on the flat FRONT face of the phone mount plate only (not on the arms or suction cup).",
+  phonestand:
+    "A blank rectangular branding area on the front face of the phone stand holder.",
+  bottle:
+    "A blank smooth wrap-around label zone on the center body of the bottle, front-facing.",
+  mug:
+    "A blank rectangular print area on the front face of the mug, between handle and center.",
+  tshirt:
+    "A blank rectangular chest print area centered on the front of the shirt.",
+  polo: "A blank rectangular chest print area centered on the front of the polo shirt.",
+  hoodie: "A blank rectangular chest print area centered on the front of the hoodie.",
+  cap: "A blank rectangular front panel on the cap, above the brim.",
+  pen: "A blank smooth barrel print area on the side of the pen body.",
+  notebook: "A blank smooth front cover area for branding.",
+  usb: "A blank smooth print area on the flat side of the USB drive.",
+  powerbank: "A blank rectangular front panel on the powerbank body.",
+  mousepad: "A blank rectangular print area covering the top surface of the mouse pad.",
+  mouse: "A blank branding area on the top shell of the mouse.",
+  speaker: "A blank rectangular front grille or panel area for branding.",
+  headphones: "A blank area on the outer side of one ear cup.",
+  giftbag: "A blank rectangular front face of the gift bag.",
+  box: "A blank rectangular area on the front or top lid of the box.",
+  jar: "A blank white label on the front of the jar.",
+  totebag: "A blank rectangular print area on the front of the tote bag.",
+  backpack: "A blank rectangular patch area on the front pocket of the backpack.",
+  badge: "A blank flat circular face on the badge.",
+  keychain: "A blank flat face on the keychain tag.",
+  banner: "A large blank white vinyl panel on the roll-up banner.",
+  paper: "Blank printable surface on the top sheet.",
+  firstaid: "A blank rectangular front panel on the kit pouch.",
+  puzzle: "A blank rectangular area on the front of the puzzle box.",
+  playingcards: "A blank rectangular front panel on the card box.",
+  airfreshener: "A blank flat branding face on the air freshener card.",
+  sunshade: "A large blank panel on the folded sun shade.",
+  carcharger: "A blank flat side panel on the car charger body.",
+  generic:
+    "One clear blank smooth print area on the primary front branding surface, facing the camera.",
+};
+
 const DEFAULT_IMAGE_MODEL = "gpt-image-1-mini";
 
 const COLOR_AI_NAMES: Record<string, string> = {
@@ -139,11 +185,13 @@ function buildAiMockupPrompt(
     `a promotional ${productName}`;
   const product = colorizeDescription(rawProduct, productColor?.trim() || "white");
   const tier = FINISH_PROMPT[finish];
+  const brandingSurface =
+    BRANDING_SURFACE_PROMPT[mockupKey] ?? BRANDING_SURFACE_PROMPT.generic;
 
   return [
     `Professional studio product photograph of ${product}, ${tier}.`,
-    "Large completely blank smooth print area on the product for later branding.",
-    "No text, no logo, no watermark, no people, no hands.",
+    brandingSurface,
+    "No text, no logo, no watermark, no people, no hands in the image.",
     "Isolated on pure white background, soft commercial lighting, photorealistic e-commerce mockup.",
     "Single product centered, subtle natural shadow, high detail.",
   ].join(" ");

@@ -56,7 +56,11 @@ export const PRODUCT_VISUALS: Record<string, ProductVisual> = {
   "Borcane personalizate": { mockupKey: "jar", aiDescription: "a clear glass jar with white lid for branding" },
   "Tirbuşoane personalizate": { mockupKey: "corkscrew", aiDescription: "a white promotional corkscrew wine opener" },
   "Desfăcătoare de sticle": { mockupKey: "corkscrew", aiDescription: "a white bottle opener tool" },
-  "Seturi de vin personalizate": { mockupKey: "winegift", aiDescription: "a white wine gift box set with bottle and accessories" },
+  "Seturi de vin personalizate": {
+    mockupKey: "winegift",
+    aiDescription:
+      "a white wine gift box set with bottle on the left and accessories, bottle has blank front label",
+  },
   "Cutii de ciocolată cu logo": { mockupKey: "chocolatebox", aiDescription: "a white rectangular chocolate gift box" },
 
   // Tehnologie

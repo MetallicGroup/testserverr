@@ -62,6 +62,18 @@ const PERSPECTIVE_BY_KEY: Record<string, Partial<OverlayPerspective>> = {
   speaker: { cssTransform: "perspective(450px) rotateY(-10deg) rotateX(5deg)", rotate: -0.05, scaleY: 0.9, skewX: -0.08 },
   carcharger: { cssTransform: "perspective(400px) rotateY(-14deg) rotateX(4deg)", rotate: -0.08, scaleY: 0.9, skewX: -0.1 },
   airfreshener: { cssTransform: "perspective(450px) rotateY(-8deg)", rotate: -0.04, scaleY: 0.94, skewX: -0.06 },
+  winegift: {
+    cssTransform: "perspective(480px) rotateY(-14deg) rotateX(3deg)",
+    rotate: -0.07,
+    scaleY: 0.9,
+    skewX: -0.09,
+  },
+  chocolatebox: { cssTransform: "perspective(560px) rotateX(16deg)", rotate: 0.05, scaleY: 0.84, skewX: 0.02 },
+  jar: { cssTransform: "perspective(420px) rotateY(-11deg)", rotate: -0.06, scaleY: 0.93, skewX: -0.08 },
+  giftbag: { cssTransform: "perspective(500px) rotateY(-9deg) rotateX(3deg)", rotate: -0.05, scaleY: 0.92, skewX: -0.07 },
+  firstaid: { cssTransform: "perspective(480px) rotateX(8deg) rotateY(-6deg)", rotate: -0.04, scaleY: 0.9, skewX: -0.06 },
+  puzzle: { cssTransform: "perspective(540px) rotateX(12deg)", rotate: 0.04, scaleY: 0.88, skewX: 0 },
+  playingcards: { cssTransform: "perspective(520px) rotateX(10deg)", rotate: 0.03, scaleY: 0.9, skewX: 0 },
 };
 
 export function getOverlayPerspective(mockupKey: string): OverlayPerspective {
@@ -91,8 +103,10 @@ export const OVERLAY_TEXT_STYLE: CSSProperties = {
 };
 
 export const OVERLAY_IMAGE_STYLE: CSSProperties = {
-  maxWidth: "88%",
-  maxHeight: "88%",
+  maxWidth: "82%",
+  maxHeight: "82%",
+  width: "auto",
+  height: "auto",
   objectFit: "contain",
   mixBlendMode: "multiply",
   opacity: 0.9,
@@ -114,8 +128,10 @@ export const OVERLAY_TEXT_DEDICATED_STYLE: CSSProperties = {
 };
 
 export const OVERLAY_IMAGE_DEDICATED_STYLE: CSSProperties = {
-  maxWidth: "90%",
-  maxHeight: "90%",
+  maxWidth: "80%",
+  maxHeight: "80%",
+  width: "auto",
+  height: "auto",
   objectFit: "contain",
   mixBlendMode: "multiply",
   opacity: 0.88,
@@ -198,7 +214,7 @@ export function drawMockupImage(
   const perspective = getOverlayPerspective(mockupKey);
   const cx = left + areaW / 2;
   const cy = top + areaH / 2;
-  const scale = Math.min((areaW * 0.88) / overlay.width, (areaH * 0.88) / overlay.height);
+  const scale = Math.min((areaW * 0.8) / overlay.width, (areaH * 0.8) / overlay.height);
   const w = overlay.width * scale;
   const h = overlay.height * scale;
   const dx = left + (areaW - w) / 2;
